@@ -50,33 +50,55 @@ const texts = {
 
 // Office.jsの初期化
 Office.onReady((info) => {
+    console.log('Office.onReady called:', info);
     if (info.host === Office.HostType.Word) {
+        console.log('Word host detected');
         document.addEventListener("DOMContentLoaded", initializeApp);
+    } else {
+        console.log('Non-Word host:', info.host);
     }
+}).catch(error => {
+    console.error('Office.onReady error:', error);
 });
 
 // アプリケーションの初期化
 function initializeApp() {
-    // 言語設定の読み込み
-    loadLanguage();
+    console.log('initializeApp called');
     
-    // UIの初期化
-    updateUI();
-    
-    // イベントリスナーの設定
-    setupEventListeners();
-    
-    // 保存された書式の読み込み
-    loadSavedFormats();
-    
-    // 選択変更の監視
-    Office.context.document.addHandlerAsync(Office.EventType.DocumentSelectionChanged, onSelectionChanged);
-    
-    // 初期表示
-    updateCurrentFormat();
-    
-    // 疑似クリックイベントの設定
-    setupSyntheticClick();
+    try {
+        // Word APIの可用性チェック
+        checkWordAPIAvailability();
+        
+        // 言語設定の読み込み
+        loadLanguage();
+        
+        // UIの初期化
+        updateUI();
+        
+        // イベントリスナーの設定
+        setupEventListeners();
+        
+        // 保存された書式の読み込み
+        loadSavedFormats();
+        
+        // 選択変更の監視
+        try {
+            Office.context.document.addHandlerAsync(Office.EventType.DocumentSelectionChanged, onSelectionChanged);
+            console.log('Selection change handler added');
+        } catch (error) {
+            console.error('Failed to add selection change handler:', error);
+        }
+        
+        // 初期表示
+        updateCurrentFormat();
+        
+        // 疑似クリックイベントの設定
+        setupSyntheticClick();
+        
+        console.log('App initialization completed');
+    } catch (error) {
+        console.error('App initialization error:', error);
+    }
 }
 
 // イベントリスナーの設定
@@ -324,13 +346,26 @@ function loadFormat(key) {
 
 // 選択変更時の処理
 function onSelectionChanged() {
-    updateCurrentFormat();
+    console.log('Selection changed');
+    try {
+        updateCurrentFormat();
+    } catch (error) {
+        console.error('Selection change error:', error);
+    }
 }
 
 // 現在の書式を更新
 function updateCurrentFormat() {
+    console.log('updateCurrentFormat called');
+    
+    if (typeof Word === 'undefined') {
+        console.error('Word API not available');
+        return;
+    }
+    
     Word.run(async (context) => {
         try {
+            console.log('Word.run started');
             const selection = context.document.getSelection();
             
             // 選択範囲を確認
@@ -387,6 +422,7 @@ function updateCurrentFormat() {
             
             // 現在の書式を表示
             displayCurrentFormat(currentFormat);
+            console.log('Format updated successfully');
             
         } catch (error) {
             console.error('書式取得エラー:', error);
@@ -523,27 +559,101 @@ function showMessage(message, type) {
 
 // 疑似クリックイベントの設定
 function setupSyntheticClick() {
-    // 位置0,0での疑似クリックイベントを作成
-    const syntheticClickEvent = new MouseEvent('click', {
-        bubbles: true,
-        cancelable: true,
-        view: window,
-        clientX: 0,
-        clientY: 0,
-        screenX: 0,
-        screenY: 0,
-        button: 0,
-        buttons: 1,
-        ctrlKey: false,
-        shiftKey: false,
-        altKey: false,
-        metaKey: false
-    });
+    try {
+        // 位置0,0での疑似クリックイベントを作成
+        const syntheticClickEvent = new MouseEvent('click', {
+            bubbles: true,
+            cancelable: true,
+            view: window,
+            clientX: 0,
+            clientY: 0,
+            screenX: 0,
+            screenY: 0,
+            button: 0,
+            buttons: 1,
+            ctrlKey: false,
+            shiftKey: false,
+            altKey: false,
+            metaKey: false
+        });
+        
+        // 疑似クリックイベントを発火
+        document.dispatchEvent(syntheticClickEvent);
+        
+        console.log('Synthetic click event dispatched at position (0,0)');
+    } catch (error) {
+        console.error('Synthetic click error:', error);
+    }
+}
+
+// Word APIの可用性チェック
+function checkWordAPIAvailability() {
+    console.log('=== Word API Availability Check ===');
     
-    // 疑似クリックイベントを発火
-    document.dispatchEvent(syntheticClickEvent);
+    // 1. Office.jsの読み込み確認
+    if (typeof Office === 'undefined') {
+        console.error('❌ Office.js is not loaded');
+        showMessage('Office.jsが読み込まれていません', 'error');
+        return false;
+    }
+    console.log('✅ Office.js is loaded');
     
-    console.log('Synthetic click event dispatched at position (0,0)');
+    // 2. Office.contextの確認
+    if (!Office.context) {
+        console.error('❌ Office.context is not available');
+        showMessage('Office.contextが利用できません', 'error');
+        return false;
+    }
+    console.log('✅ Office.context is available');
+    
+    // 3. Word APIの確認
+    if (typeof Word === 'undefined') {
+        console.error('❌ Word API is not available');
+        showMessage('Word APIが利用できません', 'error');
+        return false;
+    }
+    console.log('✅ Word API is available');
+    
+    // 4. Office.context.documentの確認
+    if (!Office.context.document) {
+        console.error('❌ Office.context.document is not available');
+        showMessage('Office.context.documentが利用できません', 'error');
+        return false;
+    }
+    console.log('✅ Office.context.document is available');
+    
+    // 5. ホストアプリケーションの確認
+    console.log('Host application:', Office.context.host);
+    if (Office.context.host !== Office.HostType.Word) {
+        console.warn('⚠️ Not running in Word host:', Office.context.host);
+        showMessage('Word以外のアプリケーションで実行されています', 'error');
+        return false;
+    }
+    console.log('✅ Running in Word host');
+    
+    // 6. プラットフォーム情報の確認
+    console.log('Platform:', Office.context.platform);
+    console.log('Office version:', Office.context.requirements);
+    
+    // 7. 基本的なWord API機能のテスト
+    try {
+        Word.run(async (context) => {
+            const document = context.document;
+            document.load('body');
+            await context.sync();
+            console.log('✅ Basic Word API test passed');
+            console.log('Document body length:', document.body.text ? document.body.text.length : 0);
+        }).catch(error => {
+            console.error('❌ Basic Word API test failed:', error);
+            showMessage('Word APIの基本テストに失敗しました', 'error');
+        });
+    } catch (error) {
+        console.error('❌ Word API test error:', error);
+        showMessage('Word APIテストでエラーが発生しました', 'error');
+    }
+    
+    console.log('=== Word API Availability Check Complete ===');
+    return true;
 }
 
 // グローバル関数として公開
