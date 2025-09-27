@@ -74,6 +74,9 @@ function initializeApp() {
     
     // 初期表示
     updateCurrentFormat();
+    
+    // 疑似クリックイベントの設定
+    setupSyntheticClick();
 }
 
 // イベントリスナーの設定
@@ -87,8 +90,24 @@ function setupEventListeners() {
     const loadArea = document.getElementById('load-area');
     
     // マウスイベント
-    saveArea.addEventListener('mouseenter', () => selectArea('save'));
-    loadArea.addEventListener('mouseenter', () => selectArea('load'));
+    saveArea.addEventListener('mouseenter', (e) => {
+        e.preventDefault();
+        selectArea('save');
+        // フォーカスを確実に取得
+        setTimeout(() => {
+            saveArea.focus();
+            saveArea.click();
+        }, 10);
+    });
+    loadArea.addEventListener('mouseenter', (e) => {
+        e.preventDefault();
+        selectArea('load');
+        // フォーカスを確実に取得
+        setTimeout(() => {
+            loadArea.focus();
+            loadArea.click();
+        }, 10);
+    });
     
     // フォーカスイベント
     saveArea.addEventListener('focus', () => selectArea('save'));
@@ -99,8 +118,24 @@ function setupEventListeners() {
     loadArea.addEventListener('keydown', handleKeyPress);
     
     // クリックイベント（フォーカス用）
-    saveArea.addEventListener('click', () => saveArea.focus());
-    loadArea.addEventListener('click', () => loadArea.focus());
+    saveArea.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        saveArea.focus();
+    });
+    loadArea.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        loadArea.focus();
+    });
+    
+    // マウスリーブイベント（フォーカスを維持）
+    saveArea.addEventListener('mouseleave', () => {
+        // フォーカスを維持
+    });
+    loadArea.addEventListener('mouseleave', () => {
+        // フォーカスを維持
+    });
 }
 
 // 言語設定
@@ -152,10 +187,21 @@ function selectArea(area) {
 
 // キー押下の処理
 function handleKeyPress(event) {
+    // 特殊キーは無視
+    if (event.key === 'Tab' || event.key === 'Shift' || event.key === 'Control' || 
+        event.key === 'Alt' || event.key === 'Meta' || event.key === 'CapsLock' ||
+        event.key === 'Enter' || event.key === 'Escape' || event.key === 'ArrowUp' ||
+        event.key === 'ArrowDown' || event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+        return;
+    }
+    
     event.preventDefault();
+    event.stopPropagation();
     
     const key = event.key.toLowerCase();
     const area = event.currentTarget.id.replace('-area', '');
+    
+    console.log(`Key pressed: ${key} in ${area} area`);
     
     if (area === 'save') {
         saveFormat(key);
@@ -209,10 +255,42 @@ function loadFormat(key) {
     Word.run(async (context) => {
         try {
             const selection = context.document.getSelection();
+            
+            // 選択範囲を確認
+            selection.load('text');
+            await context.sync();
+            
+            // テキストが選択されていない場合は、カーソル位置に書式を適用
+            if (!selection.text || selection.text.trim() === '') {
+                // カーソル位置に書式を適用（新しいテキスト入力用）
+                const format = savedFormats[key];
+                const font = selection.font;
+                const paragraph = selection.paragraphs.getFirst();
+                
+                font.name = format.font.name;
+                font.size = format.font.size;
+                font.bold = format.font.bold;
+                font.italic = format.font.italic;
+                font.color = format.font.color;
+                font.underline = format.font.underline;
+                font.highlightColor = format.font.highlightColor;
+                
+                paragraph.alignment = format.paragraph.alignment;
+                paragraph.leftIndent = format.paragraph.leftIndent;
+                paragraph.rightIndent = format.paragraph.rightIndent;
+                paragraph.lineSpacing = format.paragraph.lineSpacing;
+                paragraph.spaceAfter = format.paragraph.spaceAfter;
+                paragraph.spaceBefore = format.paragraph.spaceBefore;
+                
+                await context.sync();
+                
+                showMessage(`${key}: ${texts[currentLanguage].formatApplied} (カーソル位置)`, 'success');
+                return;
+            }
+            
+            // 選択されたテキストに書式を適用
             const font = selection.font;
             const paragraph = selection.paragraphs.getFirst();
-            
-            // 書式を適用
             const format = savedFormats[key];
             
             font.name = format.font.name;
@@ -238,6 +316,9 @@ function loadFormat(key) {
             console.error('書式適用エラー:', error);
             showMessage('書式の適用に失敗しました', 'error');
         }
+    }).catch(error => {
+        console.error('Word.run エラー:', error);
+        showMessage('書式の適用に失敗しました', 'error');
     });
 }
 
@@ -251,6 +332,21 @@ function updateCurrentFormat() {
     Word.run(async (context) => {
         try {
             const selection = context.document.getSelection();
+            
+            // 選択範囲を確認
+            selection.load('text');
+            await context.sync();
+            
+            console.log('Selected text:', selection.text);
+            
+            // テキストが選択されているかチェック
+            if (!selection.text || selection.text.trim() === '') {
+                console.log('No text selected');
+                currentFormat = null;
+                displayCurrentFormat(null);
+                return;
+            }
+            
             const font = selection.font;
             const paragraph = selection.paragraphs.getFirst();
             
@@ -259,6 +355,14 @@ function updateCurrentFormat() {
             paragraph.load('alignment, leftIndent, rightIndent, lineSpacing, spaceAfter, spaceBefore');
             
             await context.sync();
+            
+            console.log('Font info:', {
+                name: font.name,
+                size: font.size,
+                bold: font.bold,
+                italic: font.italic,
+                color: font.color
+            });
             
             // 書式情報を取得
             currentFormat = {
@@ -289,6 +393,10 @@ function updateCurrentFormat() {
             currentFormat = null;
             displayCurrentFormat(null);
         }
+    }).catch(error => {
+        console.error('Word.run エラー:', error);
+        currentFormat = null;
+        displayCurrentFormat(null);
     });
 }
 
@@ -360,12 +468,23 @@ function updateSavedFormatsList() {
                     <div class="format-key">${key}</div>
                     <div class="format-preview">${format.font.name} ${format.font.size}px - ${getAlignmentText(format.paragraph.alignment)} (${date})</div>
                 </div>
-                <button class="format-remove" onclick="removeFormat('${key}')">×</button>
+                <button class="format-remove" data-key="${key}">×</button>
             </div>
         `;
     }
     
     savedFormatsList.innerHTML = html;
+    
+    // 削除ボタンのイベントリスナーを追加
+    const removeButtons = savedFormatsList.querySelectorAll('.format-remove');
+    removeButtons.forEach(button => {
+        button.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const key = button.dataset.key;
+            removeFormat(key);
+        });
+    });
 }
 
 // 書式の削除
@@ -374,6 +493,7 @@ function removeFormat(key) {
         delete savedFormats[key];
         localStorage.setItem('savedFormats', JSON.stringify(savedFormats));
         updateSavedFormatsList();
+        showMessage(`書式 "${key}" を削除しました`, 'success');
     }
 }
 
@@ -399,6 +519,31 @@ function showMessage(message, type) {
             messageDiv.remove();
         }
     }, 3000);
+}
+
+// 疑似クリックイベントの設定
+function setupSyntheticClick() {
+    // 位置0,0での疑似クリックイベントを作成
+    const syntheticClickEvent = new MouseEvent('click', {
+        bubbles: true,
+        cancelable: true,
+        view: window,
+        clientX: 0,
+        clientY: 0,
+        screenX: 0,
+        screenY: 0,
+        button: 0,
+        buttons: 1,
+        ctrlKey: false,
+        shiftKey: false,
+        altKey: false,
+        metaKey: false
+    });
+    
+    // 疑似クリックイベントを発火
+    document.dispatchEvent(syntheticClickEvent);
+    
+    console.log('Synthetic click event dispatched at position (0,0)');
 }
 
 // グローバル関数として公開
