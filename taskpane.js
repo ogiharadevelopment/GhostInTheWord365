@@ -22,11 +22,16 @@ const texts = {
         savedFormatsTitle: '保存された書式',
         noSavedFormatsText: '保存された書式はありません',
         keyGuideTitle: 'キーガイド',
-        keyGuideText: 'SAVE領域でキーを押すと書式を保存、LOAD領域でキーを押すと書式を適用します',
+        keyGuideText: '保存された書式にマウスオーバーしてキーを押すと書式を適用します',
+        fontLabel: 'フォント',
+        lineSpacingLabel: '行間',
         formatSaved: '書式を保存しました',
         formatApplied: '書式を適用しました',
         formatNotFound: '保存された書式が見つかりません',
         noTextSelected: 'テキストが選択されていません',
+        widthToggle: '幅: 300px',
+        widthToggleNarrow: '幅: 100px',
+        deleteConfirm: (key) => `書式 "${key}" を削除しますか？`,
         japanese: '日本語',
         english: 'English'
     },
@@ -41,11 +46,16 @@ const texts = {
         savedFormatsTitle: 'Saved Formats',
         noSavedFormatsText: 'No saved formats',
         keyGuideTitle: 'Key Guide',
-        keyGuideText: 'Press key in SAVE area to save format, press key in LOAD area to apply format',
+        keyGuideText: 'Mouse over a saved format and press a key to apply it',
+        fontLabel: 'Font',
+        lineSpacingLabel: 'Line Spacing',
         formatSaved: 'Format saved',
         formatApplied: 'Format applied',
         formatNotFound: 'Saved format not found',
         noTextSelected: 'No text selected',
+        widthToggle: 'Width: 300px',
+        widthToggleNarrow: 'Width: 100px',
+        deleteConfirm: (key) => `Delete format "${key}"?`,
         japanese: '日本語',
         english: 'English'
     }
@@ -369,19 +379,32 @@ function loadLanguage() {
 function updateUI() {
     const t = texts[currentLanguage];
     
-    document.getElementById('app-title').textContent = t.appTitle;
-    document.getElementById('current-format-title').textContent = t.currentFormatTitle;
-    document.getElementById('no-selection-text').textContent = t.noSelectionText;
-    document.getElementById('save-label').textContent = t.saveLabel;
-    document.getElementById('save-instruction').textContent = t.saveInstruction;
-    document.getElementById('load-label').textContent = t.loadLabel;
-    document.getElementById('load-instruction').textContent = t.loadInstruction;
-    document.getElementById('saved-formats-title').textContent = t.savedFormatsTitle;
-    document.getElementById('no-saved-formats-text').textContent = t.noSavedFormatsText;
-    document.getElementById('key-guide-title').textContent = t.keyGuideTitle;
-    document.getElementById('key-guide-text').textContent = t.keyGuideText;
-    document.getElementById('lang-ja').textContent = t.japanese;
-    document.getElementById('lang-en').textContent = t.english;
+    // 要素の存在確認をしてから更新
+    const elements = {
+        'app-title': t.appTitle,
+        'current-format-title': t.currentFormatTitle,
+        'no-selection-text': t.noSelectionText,
+        'save-label': t.saveLabel,
+        'save-instruction': t.saveInstruction,
+        'saved-formats-title': t.savedFormatsTitle,
+        'no-saved-formats-text': t.noSavedFormatsText,
+        'key-guide-title': t.keyGuideTitle,
+        'key-guide-text': t.keyGuideText,
+        'font-label': t.fontLabel,
+        'line-spacing-label': t.lineSpacingLabel,
+        'width-toggle': t.widthToggle,
+        'lang-ja': t.japanese,
+        'lang-en': t.english
+    };
+    
+    for (const [id, text] of Object.entries(elements)) {
+        const element = document.getElementById(id);
+        if (element) {
+            element.textContent = text;
+        } else {
+            console.warn(`Element with id '${id}' not found`);
+        }
+    }
 }
 
 // 領域の選択
@@ -389,8 +412,19 @@ function selectArea(area) {
     selectedArea = area;
     
     // 視覚的フィードバック
-    document.querySelectorAll('.action-area').forEach(el => el.classList.remove('selected'));
-    document.getElementById(`${area}-area`).classList.add('selected');
+    document.querySelectorAll('.action-area, .control-area').forEach(el => el.classList.remove('selected'));
+    
+    // 対応する要素にクラスを追加
+    if (area === 'save') {
+        const saveArea = document.getElementById('save-area');
+        if (saveArea) saveArea.classList.add('selected');
+    } else if (area === 'font') {
+        const fontControl = document.getElementById('font-control');
+        if (fontControl) fontControl.classList.add('selected');
+    } else if (area === 'lineSpacing') {
+        const lineSpacingControl = document.getElementById('line-spacing-control');
+        if (lineSpacingControl) lineSpacingControl.classList.add('selected');
+    }
 }
 
 // キー押下の処理
