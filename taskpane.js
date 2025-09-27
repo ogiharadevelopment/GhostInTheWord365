@@ -50,114 +50,190 @@ const texts = {
 
 // Office.jsの初期化
 Office.onReady((info) => {
-    console.log('Office.onReady called:', info);
+    console.log('=== Office.onReady called ===');
+    console.log('Info object:', JSON.stringify(info, null, 2));
+    console.log('Host type:', info.host);
+    console.log('Platform:', info.platform);
+    
     if (info.host === Office.HostType.Word) {
-        console.log('Word host detected');
+        console.log('✅ Word host detected - proceeding with initialization');
         document.addEventListener("DOMContentLoaded", initializeApp);
     } else {
-        console.log('Non-Word host:', info.host);
+        console.log('❌ Non-Word host detected:', info.host);
+        console.log('Expected:', Office.HostType.Word);
     }
 }).catch(error => {
-    console.error('Office.onReady error:', error);
+    console.error('❌ Office.onReady error:', error);
 });
 
 // アプリケーションの初期化
 function initializeApp() {
-    console.log('initializeApp called');
+    console.log('=== initializeApp called ===');
+    console.log('DOM ready state:', document.readyState);
+    console.log('Current time:', new Date().toISOString());
     
     try {
+        console.log('Step 1: Word API availability check');
         // Word APIの可用性チェック
         checkWordAPIAvailability();
         
+        console.log('Step 2: Language loading');
         // 言語設定の読み込み
         loadLanguage();
         
+        console.log('Step 3: UI update');
         // UIの初期化
         updateUI();
         
+        console.log('Step 4: Event listeners setup');
         // イベントリスナーの設定
         setupEventListeners();
         
+        console.log('Step 5: Saved formats loading');
         // 保存された書式の読み込み
         loadSavedFormats();
         
+        console.log('Step 6: Selection change handler');
         // 選択変更の監視
         try {
             Office.context.document.addHandlerAsync(Office.EventType.DocumentSelectionChanged, onSelectionChanged);
-            console.log('Selection change handler added');
+            console.log('✅ Selection change handler added');
         } catch (error) {
-            console.error('Failed to add selection change handler:', error);
+            console.error('❌ Failed to add selection change handler:', error);
         }
         
+        console.log('Step 7: Initial format update');
         // 初期表示
         updateCurrentFormat();
         
+        console.log('Step 8: Synthetic click setup');
         // 疑似クリックイベントの設定
         setupSyntheticClick();
         
-        console.log('App initialization completed');
+        console.log('✅ App initialization completed successfully');
     } catch (error) {
-        console.error('App initialization error:', error);
+        console.error('❌ App initialization error:', error);
+        console.error('Error stack:', error.stack);
     }
 }
 
 // イベントリスナーの設定
 function setupEventListeners() {
-    // 言語切り替え
-    document.getElementById('lang-ja').addEventListener('click', () => setLanguage('ja'));
-    document.getElementById('lang-en').addEventListener('click', () => setLanguage('en'));
+    console.log('=== setupEventListeners called ===');
     
-    // SAVE/LOAD領域のイベント
-    const saveArea = document.getElementById('save-area');
-    const loadArea = document.getElementById('load-area');
+    try {
+        // 言語切り替え
+        const langJa = document.getElementById('lang-ja');
+        const langEn = document.getElementById('lang-en');
+        
+        if (langJa) {
+            langJa.addEventListener('click', () => setLanguage('ja'));
+            console.log('✅ Japanese language button event added');
+        } else {
+            console.error('❌ Japanese language button not found');
+        }
+        
+        if (langEn) {
+            langEn.addEventListener('click', () => setLanguage('en'));
+            console.log('✅ English language button event added');
+        } else {
+            console.error('❌ English language button not found');
+        }
     
-    // マウスイベント
-    saveArea.addEventListener('mouseenter', (e) => {
-        e.preventDefault();
-        selectArea('save');
-        // フォーカスを確実に取得
-        setTimeout(() => {
-            saveArea.focus();
-            saveArea.click();
-        }, 10);
-    });
-    loadArea.addEventListener('mouseenter', (e) => {
-        e.preventDefault();
-        selectArea('load');
-        // フォーカスを確実に取得
-        setTimeout(() => {
-            loadArea.focus();
-            loadArea.click();
-        }, 10);
-    });
+        // SAVE/LOAD領域のイベント
+        const saveArea = document.getElementById('save-area');
+        const loadArea = document.getElementById('load-area');
+        
+        if (saveArea) {
+            console.log('✅ Save area found');
+            // マウスイベント
+            saveArea.addEventListener('mouseenter', (e) => {
+                e.preventDefault();
+                selectArea('save');
+                // フォーカスを確実に取得
+                setTimeout(() => {
+                    saveArea.focus();
+                    saveArea.click();
+                }, 10);
+            });
+            console.log('✅ Save area mouseenter event added');
+        } else {
+            console.error('❌ Save area not found');
+        }
+        
+        if (loadArea) {
+            console.log('✅ Load area found');
+            loadArea.addEventListener('mouseenter', (e) => {
+                e.preventDefault();
+                selectArea('load');
+                // フォーカスを確実に取得
+                setTimeout(() => {
+                    loadArea.focus();
+                    loadArea.click();
+                }, 10);
+            });
+            console.log('✅ Load area mouseenter event added');
+        } else {
+            console.error('❌ Load area not found');
+        }
     
-    // フォーカスイベント
-    saveArea.addEventListener('focus', () => selectArea('save'));
-    loadArea.addEventListener('focus', () => selectArea('load'));
-    
-    // キーボードイベント
-    saveArea.addEventListener('keydown', handleKeyPress);
-    loadArea.addEventListener('keydown', handleKeyPress);
-    
-    // クリックイベント（フォーカス用）
-    saveArea.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        saveArea.focus();
-    });
-    loadArea.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        loadArea.focus();
-    });
-    
-    // マウスリーブイベント（フォーカスを維持）
-    saveArea.addEventListener('mouseleave', () => {
-        // フォーカスを維持
-    });
-    loadArea.addEventListener('mouseleave', () => {
-        // フォーカスを維持
-    });
+        // フォーカスイベント
+        if (saveArea) {
+            saveArea.addEventListener('focus', () => selectArea('save'));
+            console.log('✅ Save area focus event added');
+        }
+        if (loadArea) {
+            loadArea.addEventListener('focus', () => selectArea('load'));
+            console.log('✅ Load area focus event added');
+        }
+        
+        // キーボードイベント
+        if (saveArea) {
+            saveArea.addEventListener('keydown', handleKeyPress);
+            console.log('✅ Save area keydown event added');
+        }
+        if (loadArea) {
+            loadArea.addEventListener('keydown', handleKeyPress);
+            console.log('✅ Load area keydown event added');
+        }
+        
+        // クリックイベント（フォーカス用）
+        if (saveArea) {
+            saveArea.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                saveArea.focus();
+            });
+            console.log('✅ Save area click event added');
+        }
+        if (loadArea) {
+            loadArea.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                loadArea.focus();
+            });
+            console.log('✅ Load area click event added');
+        }
+        
+        // マウスリーブイベント（フォーカスを維持）
+        if (saveArea) {
+            saveArea.addEventListener('mouseleave', () => {
+                // フォーカスを維持
+            });
+            console.log('✅ Save area mouseleave event added');
+        }
+        if (loadArea) {
+            loadArea.addEventListener('mouseleave', () => {
+                // フォーカスを維持
+            });
+            console.log('✅ Load area mouseleave event added');
+        }
+        
+        console.log('✅ setupEventListeners completed successfully');
+    } catch (error) {
+        console.error('❌ setupEventListeners error:', error);
+        console.error('Error stack:', error.stack);
+    }
 }
 
 // 言語設定
