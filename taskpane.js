@@ -159,7 +159,7 @@ function handleKeyPress(event) {
     
     if (area === 'save') {
         saveFormat(key);
-    } else if (area === 'pulse') {
+    } else if (area === 'load') {
         loadFormat(key);
     }
     
