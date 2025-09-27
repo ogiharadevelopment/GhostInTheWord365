@@ -57,7 +57,17 @@ Office.onReady((info) => {
     
     if (info.host === Office.HostType.Word) {
         console.log('✅ Word host detected - proceeding with initialization');
-        document.addEventListener("DOMContentLoaded", initializeApp);
+        console.log('DOM ready state:', document.readyState);
+        
+        // DOMContentLoadedイベントに依存せず、直接初期化を試行
+        if (document.readyState === 'loading') {
+            console.log('DOM still loading, waiting for DOMContentLoaded');
+            document.addEventListener("DOMContentLoaded", initializeApp);
+        } else {
+            console.log('DOM already ready, initializing immediately');
+            // 少し遅延してから初期化（DOM要素が確実に存在するように）
+            setTimeout(initializeApp, 100);
+        }
     } else {
         console.log('❌ Non-Word host detected:', info.host);
         console.log('Expected:', Office.HostType.Word);
@@ -71,6 +81,8 @@ function initializeApp() {
     console.log('=== initializeApp called ===');
     console.log('DOM ready state:', document.readyState);
     console.log('Current time:', new Date().toISOString());
+    console.log('Document body exists:', !!document.body);
+    console.log('Document head exists:', !!document.head);
     
     try {
         console.log('Step 1: Word API availability check');
@@ -88,6 +100,24 @@ function initializeApp() {
         console.log('Step 4: Event listeners setup');
         // イベントリスナーの設定
         setupEventListeners();
+        
+        // 要素の存在確認
+        console.log('=== Element existence check ===');
+        const saveArea = document.getElementById('save-area');
+        const loadArea = document.getElementById('load-area');
+        const langJa = document.getElementById('lang-ja');
+        const langEn = document.getElementById('lang-en');
+        
+        console.log('Save area found:', !!saveArea);
+        console.log('Load area found:', !!loadArea);
+        console.log('Japanese button found:', !!langJa);
+        console.log('English button found:', !!langEn);
+        
+        if (!saveArea || !loadArea) {
+            console.error('❌ Critical elements missing - retrying in 500ms');
+            setTimeout(initializeApp, 500);
+            return;
+        }
         
         console.log('Step 5: Saved formats loading');
         // 保存された書式の読み込み
@@ -110,7 +140,14 @@ function initializeApp() {
         // 疑似クリックイベントの設定
         setupSyntheticClick();
         
+        console.log('Step 9: Final UI update');
+        // 最終的なUI更新
+        updateSavedFormatsList();
+        
         console.log('✅ App initialization completed successfully');
+        console.log('=== Initialization Summary ===');
+        console.log('All steps completed without errors');
+        console.log('Ready for user interaction');
     } catch (error) {
         console.error('❌ App initialization error:', error);
         console.error('Error stack:', error.stack);
@@ -635,6 +672,7 @@ function showMessage(message, type) {
 
 // 疑似クリックイベントの設定
 function setupSyntheticClick() {
+    console.log('=== setupSyntheticClick called ===');
     try {
         // 位置0,0での疑似クリックイベントを作成
         const syntheticClickEvent = new MouseEvent('click', {
@@ -656,15 +694,22 @@ function setupSyntheticClick() {
         // 疑似クリックイベントを発火
         document.dispatchEvent(syntheticClickEvent);
         
-        console.log('Synthetic click event dispatched at position (0,0)');
+        console.log('✅ Synthetic click event dispatched at position (0,0)');
+        console.log('Event details:', {
+            type: syntheticClickEvent.type,
+            bubbles: syntheticClickEvent.bubbles,
+            cancelable: syntheticClickEvent.cancelable
+        });
     } catch (error) {
-        console.error('Synthetic click error:', error);
+        console.error('❌ Synthetic click error:', error);
+        console.error('Error stack:', error.stack);
     }
 }
 
 // Word APIの可用性チェック
 function checkWordAPIAvailability() {
     console.log('=== Word API Availability Check ===');
+    console.log('Check started at:', new Date().toISOString());
     
     // 1. Office.jsの読み込み確認
     if (typeof Office === 'undefined') {
@@ -729,6 +774,7 @@ function checkWordAPIAvailability() {
     }
     
     console.log('=== Word API Availability Check Complete ===');
+    console.log('Check completed at:', new Date().toISOString());
     return true;
 }
 
