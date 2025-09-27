@@ -68,6 +68,12 @@ Office.onReady((info) => {
             // 少し遅延してから初期化（DOM要素が確実に存在するように）
             setTimeout(initializeApp, 100);
         }
+        
+        // フォールバック: 3秒後に強制初期化
+        setTimeout(() => {
+            console.log('Fallback initialization after 3 seconds');
+            initializeApp();
+        }, 3000);
     } else {
         console.log('❌ Non-Word host detected:', info.host);
         console.log('Expected:', Office.HostType.Word);
@@ -83,6 +89,13 @@ function initializeApp() {
     console.log('Current time:', new Date().toISOString());
     console.log('Document body exists:', !!document.body);
     console.log('Document head exists:', !!document.head);
+    
+    // 重複初期化を防ぐ
+    if (window.appInitialized) {
+        console.log('App already initialized, skipping');
+        return;
+    }
+    window.appInitialized = true;
     
     try {
         console.log('Step 1: Word API availability check');
@@ -115,6 +128,7 @@ function initializeApp() {
         
         if (!saveArea || !loadArea) {
             console.error('❌ Critical elements missing - retrying in 500ms');
+            window.appInitialized = false; // リトライのためにフラグをリセット
             setTimeout(initializeApp, 500);
             return;
         }
@@ -151,6 +165,7 @@ function initializeApp() {
     } catch (error) {
         console.error('❌ App initialization error:', error);
         console.error('Error stack:', error.stack);
+        window.appInitialized = false; // エラー時はフラグをリセット
     }
 }
 
@@ -780,3 +795,10 @@ function checkWordAPIAvailability() {
 
 // グローバル関数として公開
 window.removeFormat = removeFormat;
+
+// デバッグ用: 手動初期化
+window.manualInit = function() {
+    console.log('Manual initialization triggered');
+    window.appInitialized = false;
+    initializeApp();
+};
