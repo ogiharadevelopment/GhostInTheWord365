@@ -32,6 +32,7 @@ const texts = {
         widthToggle: '幅: 300px',
         widthToggleNarrow: '幅: 100px',
         deleteConfirm: (key) => `書式 "${key}" を削除しますか？`,
+        savedFormatsInstruction: 'マウスオーバーしてキーを押すと適用',
         japanese: '日本語',
         english: 'English'
     },
@@ -56,6 +57,7 @@ const texts = {
         widthToggle: 'Width: 300px',
         widthToggleNarrow: 'Width: 100px',
         deleteConfirm: (key) => `Delete format "${key}"?`,
+        savedFormatsInstruction: 'Mouse over and press key to apply',
         japanese: '日本語',
         english: 'English'
     }
@@ -393,6 +395,7 @@ function updateUI() {
         'font-label': t.fontLabel,
         'line-spacing-label': t.lineSpacingLabel,
         'width-toggle': t.widthToggle,
+        'saved-formats-instruction': t.savedFormatsInstruction,
         'lang-ja': t.japanese,
         'lang-en': t.english
     };
@@ -723,7 +726,12 @@ function updateSavedFormatsList() {
             e.preventDefault();
             e.stopPropagation();
             const key = button.dataset.key;
+            console.log('Delete button clicked for key:', key);
             removeFormat(key);
+        });
+        
+        button.addEventListener('mousedown', (e) => {
+            e.stopPropagation();
         });
     });
     
@@ -732,12 +740,7 @@ function updateSavedFormatsList() {
     formatItems.forEach(item => {
         item.addEventListener('mouseenter', (e) => {
             e.preventDefault();
-            item.classList.add('focused');
             item.focus();
-        });
-        
-        item.addEventListener('mouseleave', (e) => {
-            item.classList.remove('focused');
         });
         
         item.addEventListener('keydown', (e) => {
@@ -752,6 +755,20 @@ function updateSavedFormatsList() {
             }
         });
     });
+    
+    // スクロールビュー全体のイベントリスナーを追加
+    const savedFormatsSection = document.getElementById('saved-formats-section');
+    const instructionText = document.getElementById('saved-formats-instruction');
+    
+    if (savedFormatsSection && instructionText) {
+        savedFormatsSection.addEventListener('mouseenter', () => {
+            instructionText.style.opacity = '1';
+        });
+        
+        savedFormatsSection.addEventListener('mouseleave', () => {
+            instructionText.style.opacity = '0.7';
+        });
+    }
 }
 
 // 書式の削除
@@ -913,11 +930,11 @@ function adjustFontSize(key) {
 
 // 行間調整
 function adjustLineSpacing(key) {
-    const step = 0.1;
+    const step = 0.5;
     if (key === '+' || key === '=') {
         currentLineSpacing += step;
     } else if (key === '-') {
-        currentLineSpacing = Math.max(0.1, currentLineSpacing - step);
+        currentLineSpacing = Math.max(0.5, currentLineSpacing - step);
     } else {
         return;
     }
@@ -993,8 +1010,8 @@ function handleFontWheel(event) {
 
 function handleLineSpacingWheel(event) {
     event.preventDefault();
-    const delta = event.deltaY > 0 ? -0.1 : 0.1;
-    currentLineSpacing = Math.max(0.1, currentLineSpacing + delta);
+    const delta = event.deltaY > 0 ? -0.5 : 0.5;
+    currentLineSpacing = Math.max(0.5, currentLineSpacing + delta);
     updateLineSpacingDisplay();
     applyCurrentFormat();
 }

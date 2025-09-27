@@ -121,6 +121,7 @@ h2 {
     gap: 10px;
     margin: 20px 0;
     align-items: center;
+    justify-content: flex-start;
 }
 
 .control-area {
@@ -224,6 +225,21 @@ h2 {
 }
 
 /* 保存された書式一覧 */
+#saved-formats-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.instruction-text {
+    font-size: 11px;
+    color: #605e5c;
+    font-style: italic;
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
+}
+
 #saved-formats-list {
     max-height: 200px;
     overflow-y: auto;
@@ -247,12 +263,7 @@ h2 {
 }
 
 .format-item:hover {
-    background-color: #f3f2f1;
-}
-
-.format-item.focused {
-    background-color: #deecf9;
-    border-left: 3px solid #0078d4;
+    background-color: transparent;
 }
 
 .format-item.selected {
