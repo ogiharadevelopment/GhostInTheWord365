@@ -115,17 +115,61 @@ h2 {
     line-height: 1.5;
 }
 
-/* SAVE/LOAD領域 */
-#save-load-section {
+/* コントロール行 */
+#control-row {
     display: flex;
-    gap: 20px;
-    justify-content: center;
+    gap: 10px;
     margin: 20px 0;
+    align-items: center;
+}
+
+.control-area {
+    width: 60px;
+    height: 60px;
+    border: 2px solid #8a8886;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background-color: #ffffff;
+    position: relative;
+    outline: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.control-area:hover {
+    border-color: #0078d4;
+    background-color: #f3f2f1;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.control-area:focus {
+    border-color: #0078d4;
+    box-shadow: 0 0 0 2px rgba(0, 120, 212, 0.2);
+}
+
+.control-label {
+    font-size: 10px;
+    color: #605e5c;
+    margin-bottom: 2px;
+}
+
+.control-value {
+    font-weight: bold;
+    font-size: 12px;
+    color: #323130;
 }
 
 .action-area {
-    width: 75px;
-    height: 75px;
+    width: 60px;
+    height: 60px;
     border: 2px solid #8a8886;
     border-radius: 8px;
     display: flex;
@@ -166,14 +210,14 @@ h2 {
 }
 
 .area-label {
-    font-size: 16px;
+    font-size: 12px;
     font-weight: bold;
     color: #323130;
     margin-bottom: 2px;
 }
 
 .area-instruction {
-    font-size: 10px;
+    font-size: 8px;
     color: #605e5c;
     text-align: center;
     line-height: 1.2;
@@ -181,7 +225,7 @@ h2 {
 
 /* 保存された書式一覧 */
 #saved-formats-list {
-    max-height: 150px;
+    max-height: 200px;
     overflow-y: auto;
     border: 1px solid #edebe9;
     border-radius: 4px;
@@ -204,6 +248,11 @@ h2 {
 
 .format-item:hover {
     background-color: #f3f2f1;
+}
+
+.format-item.focused {
+    background-color: #deecf9;
+    border-left: 3px solid #0078d4;
 }
 
 .format-item.selected {
@@ -305,25 +354,56 @@ h2 {
     animation: pulse 0.3s ease;
 }
 
+/* 幅切り替えボタン */
+#width-toggle-section {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.width-toggle-btn {
+    padding: 8px 16px;
+    border: 1px solid #8a8886;
+    background-color: #ffffff;
+    color: #323130;
+    font-size: 12px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.width-toggle-btn:hover {
+    background-color: #f3f2f1;
+}
+
+/* 幅切り替え */
+#app.narrow {
+    width: 100px;
+}
+
+#app.wide {
+    width: 300px;
+}
+
 /* レスポンシブ対応 */
 @media (max-width: 400px) {
-    #save-load-section {
+    #control-row {
         flex-direction: column;
         align-items: center;
         gap: 15px;
     }
     
+    .control-area,
     .action-area {
         width: 60px;
         height: 60px;
     }
     
     .area-label {
-        font-size: 14px;
+        font-size: 12px;
     }
     
     .area-instruction {
-        font-size: 9px;
+        font-size: 8px;
     }
 }
 

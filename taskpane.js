@@ -4,6 +4,9 @@
 let currentFormat = null;
 let savedFormats = {};
 let currentLanguage = 'ja';
+let currentFontSize = 12;
+let currentLineSpacing = 1.0;
+let isWideMode = true;
 let selectedArea = null;
 
 // 多言語対応テキスト
@@ -117,16 +120,18 @@ function initializeApp() {
         // 要素の存在確認
         console.log('=== Element existence check ===');
         const saveArea = document.getElementById('save-area');
-        const loadArea = document.getElementById('load-area');
+        const fontControl = document.getElementById('font-control');
+        const lineSpacingControl = document.getElementById('line-spacing-control');
         const langJa = document.getElementById('lang-ja');
         const langEn = document.getElementById('lang-en');
         
         console.log('Save area found:', !!saveArea);
-        console.log('Load area found:', !!loadArea);
+        console.log('Font control found:', !!fontControl);
+        console.log('Line spacing control found:', !!lineSpacingControl);
         console.log('Japanese button found:', !!langJa);
         console.log('English button found:', !!langEn);
         
-        if (!saveArea || !loadArea) {
+        if (!saveArea || !fontControl || !lineSpacingControl) {
             console.error('❌ Critical elements missing - retrying in 500ms');
             window.appInitialized = false; // リトライのためにフラグをリセット
             setTimeout(initializeApp, 500);
@@ -157,6 +162,11 @@ function initializeApp() {
         console.log('Step 9: Final UI update');
         // 最終的なUI更新
         updateSavedFormatsList();
+        
+        console.log('Step 10: Initialize display values');
+        // 初期表示値を設定
+        updateFontSizeDisplay();
+        updateLineSpacingDisplay();
         
         console.log('✅ App initialization completed successfully');
         console.log('=== Initialization Summary ===');
@@ -192,9 +202,11 @@ function setupEventListeners() {
             console.error('❌ English language button not found');
         }
     
-        // SAVE/LOAD領域のイベント
+        // コントロール領域のイベント
         const saveArea = document.getElementById('save-area');
-        const loadArea = document.getElementById('load-area');
+        const fontControl = document.getElementById('font-control');
+        const lineSpacingControl = document.getElementById('line-spacing-control');
+        const widthToggle = document.getElementById('width-toggle');
         
         if (saveArea) {
             console.log('✅ Save area found');
@@ -213,20 +225,44 @@ function setupEventListeners() {
             console.error('❌ Save area not found');
         }
         
-        if (loadArea) {
-            console.log('✅ Load area found');
-            loadArea.addEventListener('mouseenter', (e) => {
+        if (fontControl) {
+            console.log('✅ Font control found');
+            fontControl.addEventListener('mouseenter', (e) => {
                 e.preventDefault();
-                selectArea('load');
-                // フォーカスを確実に取得
+                selectArea('font');
                 setTimeout(() => {
-                    loadArea.focus();
-                    loadArea.click();
+                    fontControl.focus();
+                    fontControl.click();
                 }, 10);
             });
-            console.log('✅ Load area mouseenter event added');
+            fontControl.addEventListener('wheel', handleFontWheel);
+            console.log('✅ Font control events added');
         } else {
-            console.error('❌ Load area not found');
+            console.error('❌ Font control not found');
+        }
+        
+        if (lineSpacingControl) {
+            console.log('✅ Line spacing control found');
+            lineSpacingControl.addEventListener('mouseenter', (e) => {
+                e.preventDefault();
+                selectArea('lineSpacing');
+                setTimeout(() => {
+                    lineSpacingControl.focus();
+                    lineSpacingControl.click();
+                }, 10);
+            });
+            lineSpacingControl.addEventListener('wheel', handleLineSpacingWheel);
+            console.log('✅ Line spacing control events added');
+        } else {
+            console.error('❌ Line spacing control not found');
+        }
+        
+        if (widthToggle) {
+            console.log('✅ Width toggle found');
+            widthToggle.addEventListener('click', toggleWidth);
+            console.log('✅ Width toggle event added');
+        } else {
+            console.error('❌ Width toggle not found');
         }
     
         // フォーカスイベント
@@ -234,9 +270,13 @@ function setupEventListeners() {
             saveArea.addEventListener('focus', () => selectArea('save'));
             console.log('✅ Save area focus event added');
         }
-        if (loadArea) {
-            loadArea.addEventListener('focus', () => selectArea('load'));
-            console.log('✅ Load area focus event added');
+        if (fontControl) {
+            fontControl.addEventListener('focus', () => selectArea('font'));
+            console.log('✅ Font control focus event added');
+        }
+        if (lineSpacingControl) {
+            lineSpacingControl.addEventListener('focus', () => selectArea('lineSpacing'));
+            console.log('✅ Line spacing control focus event added');
         }
         
         // キーボードイベント
@@ -244,9 +284,13 @@ function setupEventListeners() {
             saveArea.addEventListener('keydown', handleKeyPress);
             console.log('✅ Save area keydown event added');
         }
-        if (loadArea) {
-            loadArea.addEventListener('keydown', handleKeyPress);
-            console.log('✅ Load area keydown event added');
+        if (fontControl) {
+            fontControl.addEventListener('keydown', handleKeyPress);
+            console.log('✅ Font control keydown event added');
+        }
+        if (lineSpacingControl) {
+            lineSpacingControl.addEventListener('keydown', handleKeyPress);
+            console.log('✅ Line spacing control keydown event added');
         }
         
         // クリックイベント（フォーカス用）
@@ -258,13 +302,21 @@ function setupEventListeners() {
             });
             console.log('✅ Save area click event added');
         }
-        if (loadArea) {
-            loadArea.addEventListener('click', (e) => {
+        if (fontControl) {
+            fontControl.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                loadArea.focus();
+                fontControl.focus();
             });
-            console.log('✅ Load area click event added');
+            console.log('✅ Font control click event added');
+        }
+        if (lineSpacingControl) {
+            lineSpacingControl.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                lineSpacingControl.focus();
+            });
+            console.log('✅ Line spacing control click event added');
         }
         
         // マウスリーブイベント（フォーカスを維持）
@@ -274,11 +326,17 @@ function setupEventListeners() {
             });
             console.log('✅ Save area mouseleave event added');
         }
-        if (loadArea) {
-            loadArea.addEventListener('mouseleave', () => {
+        if (fontControl) {
+            fontControl.addEventListener('mouseleave', () => {
                 // フォーカスを維持
             });
-            console.log('✅ Load area mouseleave event added');
+            console.log('✅ Font control mouseleave event added');
+        }
+        if (lineSpacingControl) {
+            lineSpacingControl.addEventListener('mouseleave', () => {
+                // フォーカスを維持
+            });
+            console.log('✅ Line spacing control mouseleave event added');
         }
         
         console.log('✅ setupEventListeners completed successfully');
@@ -338,7 +396,7 @@ function selectArea(area) {
 // キー押下の処理
 function handleKeyPress(event) {
     // 特殊キーは無視
-    if (event.key === 'Tab' || event.key === 'Shift' || event.key === 'Control' || 
+    if (event.key === 'Tab' || event.key === 'Shift' || event.key === 'Control' ||
         event.key === 'Alt' || event.key === 'Meta' || event.key === 'CapsLock' ||
         event.key === 'Enter' || event.key === 'Escape' || event.key === 'ArrowUp' ||
         event.key === 'ArrowDown' || event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
@@ -349,14 +407,16 @@ function handleKeyPress(event) {
     event.stopPropagation();
     
     const key = event.key.toLowerCase();
-    const area = event.currentTarget.id.replace('-area', '');
+    const targetId = event.currentTarget.id;
     
-    console.log(`Key pressed: ${key} in ${area} area`);
+    console.log(`Key pressed: ${key} in ${targetId}`);
     
-    if (area === 'save') {
+    if (targetId === 'save-area') {
         saveFormat(key);
-    } else if (area === 'load') {
-        loadFormat(key);
+    } else if (targetId === 'font-control') {
+        adjustFontSize(key);
+    } else if (targetId === 'line-spacing-control') {
+        adjustLineSpacing(key);
     }
     
     // 視覚的フィードバック
@@ -395,7 +455,7 @@ function saveFormat(key) {
     }
 }
 
-// 書式の適用
+// 書式の適用（保存された書式から）
 function loadFormat(key) {
     if (!savedFormats[key]) {
         showMessage(texts[currentLanguage].formatNotFound, 'error');
@@ -410,38 +470,10 @@ function loadFormat(key) {
             selection.load('text');
             await context.sync();
             
-            // テキストが選択されていない場合は、カーソル位置に書式を適用
-            if (!selection.text || selection.text.trim() === '') {
-                // カーソル位置に書式を適用（新しいテキスト入力用）
-                const format = savedFormats[key];
-                const font = selection.font;
-                const paragraph = selection.paragraphs.getFirst();
-                
-                font.name = format.font.name;
-                font.size = format.font.size;
-                font.bold = format.font.bold;
-                font.italic = format.font.italic;
-                font.color = format.font.color;
-                font.underline = format.font.underline;
-                font.highlightColor = format.font.highlightColor;
-                
-                paragraph.alignment = format.paragraph.alignment;
-                paragraph.leftIndent = format.paragraph.leftIndent;
-                paragraph.rightIndent = format.paragraph.rightIndent;
-                paragraph.lineSpacing = format.paragraph.lineSpacing;
-                paragraph.spaceAfter = format.paragraph.spaceAfter;
-                paragraph.spaceBefore = format.paragraph.spaceBefore;
-                
-                await context.sync();
-                
-                showMessage(`${key}: ${texts[currentLanguage].formatApplied} (カーソル位置)`, 'success');
-                return;
-            }
-            
-            // 選択されたテキストに書式を適用
+            // テキストが選択されていない場合でも適用可能
+            const format = savedFormats[key];
             const font = selection.font;
             const paragraph = selection.paragraphs.getFirst();
-            const format = savedFormats[key];
             
             font.name = format.font.name;
             font.size = format.font.size;
@@ -460,7 +492,10 @@ function loadFormat(key) {
             
             await context.sync();
             
-            showMessage(`${key}: ${texts[currentLanguage].formatApplied}`, 'success');
+            const message = selection.text && selection.text.trim() !== '' 
+                ? `${key}: ${texts[currentLanguage].formatApplied}`
+                : `${key}: ${texts[currentLanguage].formatApplied} (カーソル位置)`;
+            showMessage(message, 'success');
             
         } catch (error) {
             console.error('書式適用エラー:', error);
@@ -548,6 +583,14 @@ function updateCurrentFormat() {
                 }
             };
             
+            // 現在のフォントサイズと行間を更新
+            currentFontSize = font.size;
+            currentLineSpacing = paragraph.lineSpacing;
+            
+            // 表示を更新
+            updateFontSizeDisplay();
+            updateLineSpacingDisplay();
+            
             // 現在の書式を表示
             displayCurrentFormat(currentFormat);
             console.log('Format updated successfully');
@@ -627,7 +670,7 @@ function updateSavedFormatsList() {
     for (const [key, format] of Object.entries(savedFormats)) {
         const date = new Date(format.timestamp).toLocaleDateString();
         html += `
-            <div class="format-item" data-key="${key}">
+            <div class="format-item" data-key="${key}" tabindex="0">
                 <div>
                     <div class="format-key">${key}</div>
                     <div class="format-preview">${format.font.name} ${format.font.size}px - ${getAlignmentText(format.paragraph.alignment)} (${date})</div>
@@ -647,6 +690,32 @@ function updateSavedFormatsList() {
             e.stopPropagation();
             const key = button.dataset.key;
             removeFormat(key);
+        });
+    });
+    
+    // 書式項目のイベントリスナーを追加
+    const formatItems = savedFormatsList.querySelectorAll('.format-item');
+    formatItems.forEach(item => {
+        item.addEventListener('mouseenter', (e) => {
+            e.preventDefault();
+            item.classList.add('focused');
+            item.focus();
+        });
+        
+        item.addEventListener('mouseleave', (e) => {
+            item.classList.remove('focused');
+        });
+        
+        item.addEventListener('keydown', (e) => {
+            if (e.key !== 'Tab' && e.key !== 'Shift' && e.key !== 'Control' && 
+                e.key !== 'Alt' && e.key !== 'Meta' && e.key !== 'CapsLock' &&
+                e.key !== 'Enter' && e.key !== 'Escape' && e.key !== 'ArrowUp' &&
+                e.key !== 'ArrowDown' && e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') {
+                e.preventDefault();
+                e.stopPropagation();
+                const key = e.key.toLowerCase();
+                loadFormat(key);
+            }
         });
     });
 }
@@ -791,6 +860,126 @@ function checkWordAPIAvailability() {
     console.log('=== Word API Availability Check Complete ===');
     console.log('Check completed at:', new Date().toISOString());
     return true;
+}
+
+// フォントサイズ調整
+function adjustFontSize(key) {
+    const step = 1;
+    if (key === '+' || key === '=') {
+        currentFontSize += step;
+    } else if (key === '-') {
+        currentFontSize = Math.max(1, currentFontSize - step);
+    } else {
+        return;
+    }
+    
+    updateFontSizeDisplay();
+    applyCurrentFormat();
+}
+
+// 行間調整
+function adjustLineSpacing(key) {
+    const step = 0.1;
+    if (key === '+' || key === '=') {
+        currentLineSpacing += step;
+    } else if (key === '-') {
+        currentLineSpacing = Math.max(0.1, currentLineSpacing - step);
+    } else {
+        return;
+    }
+    
+    updateLineSpacingDisplay();
+    applyCurrentFormat();
+}
+
+// フォントサイズ表示更新
+function updateFontSizeDisplay() {
+    const display = document.getElementById('font-size-display');
+    if (display) {
+        display.textContent = `${currentFontSize}px`;
+    }
+}
+
+// 行間表示更新
+function updateLineSpacingDisplay() {
+    const display = document.getElementById('line-spacing-display');
+    if (display) {
+        display.textContent = currentLineSpacing.toFixed(1);
+    }
+}
+
+// 現在の書式を適用
+function applyCurrentFormat() {
+    if (!currentFormat) return;
+    
+    Word.run(async (context) => {
+        try {
+            const selection = context.document.getSelection();
+            const font = selection.font;
+            const paragraph = selection.paragraphs.getFirst();
+            
+            // 現在の書式を更新
+            currentFormat.font.size = currentFontSize;
+            currentFormat.paragraph.lineSpacing = currentLineSpacing;
+            
+            // 書式を適用
+            font.name = currentFormat.font.name;
+            font.size = currentFormat.font.size;
+            font.bold = currentFormat.font.bold;
+            font.italic = currentFormat.font.italic;
+            font.color = currentFormat.font.color;
+            font.underline = currentFormat.font.underline;
+            font.highlightColor = currentFormat.font.highlightColor;
+            
+            paragraph.alignment = currentFormat.paragraph.alignment;
+            paragraph.leftIndent = currentFormat.paragraph.leftIndent;
+            paragraph.rightIndent = currentFormat.paragraph.rightIndent;
+            paragraph.lineSpacing = currentFormat.paragraph.lineSpacing;
+            paragraph.spaceAfter = currentFormat.paragraph.spaceAfter;
+            paragraph.spaceBefore = currentFormat.paragraph.spaceBefore;
+            
+            await context.sync();
+            
+        } catch (error) {
+            console.error('書式適用エラー:', error);
+        }
+    }).catch(error => {
+        console.error('Word.run エラー:', error);
+    });
+}
+
+// ホイールイベント処理
+function handleFontWheel(event) {
+    event.preventDefault();
+    const delta = event.deltaY > 0 ? -1 : 1;
+    currentFontSize = Math.max(1, currentFontSize + delta);
+    updateFontSizeDisplay();
+    applyCurrentFormat();
+}
+
+function handleLineSpacingWheel(event) {
+    event.preventDefault();
+    const delta = event.deltaY > 0 ? -0.1 : 0.1;
+    currentLineSpacing = Math.max(0.1, currentLineSpacing + delta);
+    updateLineSpacingDisplay();
+    applyCurrentFormat();
+}
+
+// 幅切り替え
+function toggleWidth() {
+    isWideMode = !isWideMode;
+    const app = document.getElementById('app');
+    const button = document.getElementById('width-toggle');
+    
+    if (isWideMode) {
+        app.classList.remove('narrow');
+        app.classList.add('wide');
+        button.textContent = '幅: 300px';
+    } else {
+        app.classList.remove('wide');
+        app.classList.add('narrow');
+        button.textContent = '幅: 100px';
+    }
 }
 
 // グローバル関数として公開

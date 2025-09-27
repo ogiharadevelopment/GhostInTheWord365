@@ -33,15 +33,19 @@
                 </div>
             </div>
             
-            <!-- SAVE/LOAD領域 -->
-            <div id="save-load-section">
+            <!-- コントロール行 -->
+            <div id="control-row">
+                <div id="font-control" class="control-area" tabindex="0">
+                    <div class="control-label">フォント</div>
+                    <div class="control-value" id="font-size-display">12px</div>
+                </div>
+                <div id="line-spacing-control" class="control-area" tabindex="0">
+                    <div class="control-label">行間</div>
+                    <div class="control-value" id="line-spacing-display">1.0</div>
+                </div>
                 <div id="save-area" class="action-area" tabindex="0">
                     <div class="area-label" id="save-label">SAVE</div>
                     <div class="area-instruction" id="save-instruction">キーを押して保存</div>
-                </div>
-                <div id="load-area" class="action-area" tabindex="0">
-                    <div class="area-label" id="load-label">LOAD</div>
-                    <div class="area-instruction" id="load-instruction">キーを押して適用</div>
                 </div>
             </div>
             
@@ -53,11 +57,16 @@
                 </div>
             </div>
             
+            <!-- 幅切り替えボタン -->
+            <div id="width-toggle-section">
+                <button id="width-toggle" class="width-toggle-btn">幅: 300px</button>
+            </div>
+            
             <!-- キーガイド -->
             <div id="key-guide-section">
                 <h2 id="key-guide-title">キーガイド</h2>
                 <div id="key-guide-content">
-                    <p id="key-guide-text">SAVE領域でキーを押すと書式を保存、LOAD領域でキーを押すと書式を適用します</p>
+                    <p id="key-guide-text">保存された書式にマウスオーバーしてキーを押すと書式を適用します</p>
                 </div>
             </div>
         </div>
