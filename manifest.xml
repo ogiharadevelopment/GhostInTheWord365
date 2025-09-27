@@ -6,6 +6,8 @@
   <DefaultLocale>ja-JP</DefaultLocale>
   <DisplayName DefaultValue="書式管理アドイン" />
   <Description DefaultValue="Word文書の書式を保存・適用するアドインです。" />
+  <Override Locale="en-US" Value="Format Manager Add-in" />
+  <Override Locale="en-US" Value="Add-in for saving and applying Word document formats." />
   <IconUrl DefaultValue=""/>
   <HighResolutionIconUrl DefaultValue=""/>
   <SupportUrl DefaultValue="https://ogiharadevelopment.github.io/GhostInTheWord365/"/>
@@ -75,10 +77,15 @@
         <bt:String id="GetStarted.Title" DefaultValue="書式管理アドインを開始する" />
         <bt:String id="CommandsGroup.Label" DefaultValue="書式管理" />
         <bt:String id="TaskpaneButton.Label" DefaultValue="書式管理" />
+        <bt:String id="GetStarted.Title" Locale="en-US" DefaultValue="Start Format Manager Add-in" />
+        <bt:String id="CommandsGroup.Label" Locale="en-US" DefaultValue="Format Manager" />
+        <bt:String id="TaskpaneButton.Label" Locale="en-US" DefaultValue="Format Manager" />
       </bt:ShortStrings>
       <bt:LongStrings>
         <bt:String id="GetStarted.Description" DefaultValue="Word文書の書式を保存・適用するアドインです。" />
         <bt:String id="TaskpaneButton.Tooltip" DefaultValue="書式管理パネルを開きます" />
+        <bt:String id="GetStarted.Description" Locale="en-US" DefaultValue="Add-in for saving and applying Word document formats." />
+        <bt:String id="TaskpaneButton.Tooltip" Locale="en-US" DefaultValue="Open Format Manager Panel" />
       </bt:LongStrings>
     </Resources>
   </VersionOverrides>

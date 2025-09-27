@@ -1,8 +1,52 @@
 /* global Office */
 
 // グローバル変数
-let selectedFormat = null;
+let currentFormat = null;
 let savedFormats = {};
+let currentLanguage = 'ja';
+let selectedArea = null;
+
+// 多言語対応テキスト
+const texts = {
+    ja: {
+        appTitle: '書式管理',
+        currentFormatTitle: '現在の書式',
+        noSelectionText: 'テキストを選択してください',
+        saveLabel: 'SAVE',
+        saveInstruction: 'キーを押して保存',
+        loadLabel: 'LOAD',
+        loadInstruction: 'キーを押して適用',
+        savedFormatsTitle: '保存された書式',
+        noSavedFormatsText: '保存された書式はありません',
+        keyGuideTitle: 'キーガイド',
+        keyGuideText: 'SAVE領域でキーを押すと書式を保存、LOAD領域でキーを押すと書式を適用します',
+        formatSaved: '書式を保存しました',
+        formatApplied: '書式を適用しました',
+        formatNotFound: '保存された書式が見つかりません',
+        noTextSelected: 'テキストが選択されていません',
+        japanese: '日本語',
+        english: 'English'
+    },
+    en: {
+        appTitle: 'Format Manager',
+        currentFormatTitle: 'Current Format',
+        noSelectionText: 'Please select text',
+        saveLabel: 'SAVE',
+        saveInstruction: 'Press key to save',
+        loadLabel: 'LOAD',
+        loadInstruction: 'Press key to apply',
+        savedFormatsTitle: 'Saved Formats',
+        noSavedFormatsText: 'No saved formats',
+        keyGuideTitle: 'Key Guide',
+        keyGuideText: 'Press key in SAVE area to save format, press key in LOAD area to apply format',
+        formatSaved: 'Format saved',
+        formatApplied: 'Format applied',
+        formatNotFound: 'Saved format not found',
+        noTextSelected: 'No text selected',
+        japanese: '日本語',
+        english: 'English'
+    }
+};
 
 // Office.jsの初期化
 Office.onReady((info) => {
@@ -13,10 +57,14 @@ Office.onReady((info) => {
 
 // アプリケーションの初期化
 function initializeApp() {
+    // 言語設定の読み込み
+    loadLanguage();
+    
+    // UIの初期化
+    updateUI();
+    
     // イベントリスナーの設定
-    document.getElementById("save-format").addEventListener("click", saveFormat);
-    document.getElementById("apply-format").addEventListener("click", applyFormat);
-    document.getElementById("clear-format").addEventListener("click", clearFormat);
+    setupEventListeners();
     
     // 保存された書式の読み込み
     loadSavedFormats();
@@ -26,6 +74,171 @@ function initializeApp() {
     
     // 初期表示
     updateCurrentFormat();
+}
+
+// イベントリスナーの設定
+function setupEventListeners() {
+    // 言語切り替え
+    document.getElementById('lang-ja').addEventListener('click', () => setLanguage('ja'));
+    document.getElementById('lang-en').addEventListener('click', () => setLanguage('en'));
+    
+    // SAVE/LOAD領域のイベント
+    const saveArea = document.getElementById('save-area');
+    const loadArea = document.getElementById('load-area');
+    
+    // マウスイベント
+    saveArea.addEventListener('mouseenter', () => selectArea('save'));
+    loadArea.addEventListener('mouseenter', () => selectArea('load'));
+    
+    // フォーカスイベント
+    saveArea.addEventListener('focus', () => selectArea('save'));
+    loadArea.addEventListener('focus', () => selectArea('load'));
+    
+    // キーボードイベント
+    saveArea.addEventListener('keydown', handleKeyPress);
+    loadArea.addEventListener('keydown', handleKeyPress);
+    
+    // クリックイベント（フォーカス用）
+    saveArea.addEventListener('click', () => saveArea.focus());
+    loadArea.addEventListener('click', () => loadArea.focus());
+}
+
+// 言語設定
+function setLanguage(lang) {
+    currentLanguage = lang;
+    localStorage.setItem('formatManagerLanguage', lang);
+    updateUI();
+    
+    // 言語ボタンの状態更新
+    document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+    document.getElementById(`lang-${lang}`).classList.add('active');
+}
+
+// 言語設定の読み込み
+function loadLanguage() {
+    const savedLang = localStorage.getItem('formatManagerLanguage');
+    if (savedLang && texts[savedLang]) {
+        currentLanguage = savedLang;
+    }
+}
+
+// UIの更新
+function updateUI() {
+    const t = texts[currentLanguage];
+    
+    document.getElementById('app-title').textContent = t.appTitle;
+    document.getElementById('current-format-title').textContent = t.currentFormatTitle;
+    document.getElementById('no-selection-text').textContent = t.noSelectionText;
+    document.getElementById('save-label').textContent = t.saveLabel;
+    document.getElementById('save-instruction').textContent = t.saveInstruction;
+    document.getElementById('load-label').textContent = t.loadLabel;
+    document.getElementById('load-instruction').textContent = t.loadInstruction;
+    document.getElementById('saved-formats-title').textContent = t.savedFormatsTitle;
+    document.getElementById('no-saved-formats-text').textContent = t.noSavedFormatsText;
+    document.getElementById('key-guide-title').textContent = t.keyGuideTitle;
+    document.getElementById('key-guide-text').textContent = t.keyGuideText;
+    document.getElementById('lang-ja').textContent = t.japanese;
+    document.getElementById('lang-en').textContent = t.english;
+}
+
+// 領域の選択
+function selectArea(area) {
+    selectedArea = area;
+    
+    // 視覚的フィードバック
+    document.querySelectorAll('.action-area').forEach(el => el.classList.remove('selected'));
+    document.getElementById(`${area}-area`).classList.add('selected');
+}
+
+// キー押下の処理
+function handleKeyPress(event) {
+    event.preventDefault();
+    
+    const key = event.key.toLowerCase();
+    const area = event.currentTarget.id.replace('-area', '');
+    
+    if (area === 'save') {
+        saveFormat(key);
+    } else if (area === 'pulse') {
+        loadFormat(key);
+    }
+    
+    // 視覚的フィードバック
+    event.currentTarget.classList.add('pulse');
+    setTimeout(() => {
+        event.currentTarget.classList.remove('pulse');
+    }, 300);
+}
+
+// 書式の保存
+function saveFormat(key) {
+    if (!currentFormat) {
+        showMessage(texts[currentLanguage].noTextSelected, 'error');
+        return;
+    }
+    
+    try {
+        savedFormats[key] = {
+            ...currentFormat,
+            timestamp: new Date().toISOString()
+        };
+        
+        localStorage.setItem('savedFormats', JSON.stringify(savedFormats));
+        updateSavedFormatsList();
+        
+        // 視覚的フィードバック
+        const saveArea = document.getElementById('save-area');
+        saveArea.classList.add('saved');
+        setTimeout(() => saveArea.classList.remove('saved'), 1000);
+        
+        showMessage(`${key}: ${texts[currentLanguage].formatSaved}`, 'success');
+        
+    } catch (error) {
+        console.error('書式保存エラー:', error);
+        showMessage('書式の保存に失敗しました', 'error');
+    }
+}
+
+// 書式の適用
+function loadFormat(key) {
+    if (!savedFormats[key]) {
+        showMessage(texts[currentLanguage].formatNotFound, 'error');
+        return;
+    }
+    
+    Word.run(async (context) => {
+        try {
+            const selection = context.document.getSelection();
+            const font = selection.font;
+            const paragraph = selection.paragraphs.getFirst();
+            
+            // 書式を適用
+            const format = savedFormats[key];
+            
+            font.name = format.font.name;
+            font.size = format.font.size;
+            font.bold = format.font.bold;
+            font.italic = format.font.italic;
+            font.color = format.font.color;
+            font.underline = format.font.underline;
+            font.highlightColor = format.font.highlightColor;
+            
+            paragraph.alignment = format.paragraph.alignment;
+            paragraph.leftIndent = format.paragraph.leftIndent;
+            paragraph.rightIndent = format.paragraph.rightIndent;
+            paragraph.lineSpacing = format.paragraph.lineSpacing;
+            paragraph.spaceAfter = format.paragraph.spaceAfter;
+            paragraph.spaceBefore = format.paragraph.spaceBefore;
+            
+            await context.sync();
+            
+            showMessage(`${key}: ${texts[currentLanguage].formatApplied}`, 'success');
+            
+        } catch (error) {
+            console.error('書式適用エラー:', error);
+            showMessage('書式の適用に失敗しました', 'error');
+        }
+    });
 }
 
 // 選択変更時の処理
@@ -48,7 +261,7 @@ function updateCurrentFormat() {
             await context.sync();
             
             // 書式情報を取得
-            const formatInfo = {
+            currentFormat = {
                 font: {
                     name: font.name,
                     size: font.size,
@@ -69,45 +282,36 @@ function updateCurrentFormat() {
             };
             
             // 現在の書式を表示
-            displayCurrentFormat(formatInfo);
+            displayCurrentFormat(currentFormat);
             
         } catch (error) {
             console.error('書式取得エラー:', error);
-            showMessage('書式の取得に失敗しました', 'error');
+            currentFormat = null;
+            displayCurrentFormat(null);
         }
     });
 }
 
 // 現在の書式を表示
-function displayCurrentFormat(formatInfo) {
-    const formatDisplay = document.getElementById('current-format');
+function displayCurrentFormat(format) {
+    const formatDisplay = document.getElementById('current-format-display');
     
-    if (!formatInfo) {
-        formatDisplay.innerHTML = '<p>テキストを選択して書式を確認してください</p>';
+    if (!format) {
+        formatDisplay.innerHTML = `<p>${texts[currentLanguage].noSelectionText}</p>`;
         return;
     }
     
-    const font = formatInfo.font;
-    const paragraph = formatInfo.paragraph;
+    const font = format.font;
+    const paragraph = format.paragraph;
     
     // 配置の日本語表示
     const alignmentText = getAlignmentText(paragraph.alignment);
     
     const formatText = `
-        <div style="font-family: ${font.name}; font-size: ${font.size}px; 
-                    font-weight: ${font.bold ? 'bold' : 'normal'}; 
-                    font-style: ${font.italic ? 'italic' : 'normal'};
-                    color: ${font.color}; text-align: ${alignmentText};">
-            <strong>フォント:</strong> ${font.name}<br>
-            <strong>サイズ:</strong> ${font.size}px<br>
-            <strong>太字:</strong> ${font.bold ? 'ON' : 'OFF'}<br>
-            <strong>斜体:</strong> ${font.italic ? 'ON' : 'OFF'}<br>
-            <strong>色:</strong> ${font.color}<br>
-            <strong>下線:</strong> ${font.underline}<br>
-            <strong>配置:</strong> ${alignmentText}<br>
-            <strong>左インデント:</strong> ${paragraph.leftIndent}pt<br>
-            <strong>右インデント:</strong> ${paragraph.rightIndent}pt<br>
-            <strong>行間:</strong> ${paragraph.lineSpacing}pt
+        <div class="format-info">
+            <strong>${font.name}</strong> ${font.size}px<br>
+            ${font.bold ? '太字' : ''} ${font.italic ? '斜体' : ''}<br>
+            ${alignmentText} | 色: ${font.color}
         </div>
     `;
     
@@ -116,148 +320,13 @@ function displayCurrentFormat(formatInfo) {
 
 // 配置の日本語表示を取得
 function getAlignmentText(alignment) {
-    switch (alignment) {
-        case 'Left': return '左揃え';
-        case 'Center': return '中央揃え';
-        case 'Right': return '右揃え';
-        case 'Justified': return '両端揃え';
-        default: return alignment;
-    }
-}
-
-// 書式を保存
-function saveFormat() {
-    const formatName = document.getElementById('format-name').value.trim();
-    
-    if (!formatName) {
-        showMessage('書式名を入力してください', 'error');
-        return;
-    }
-    
-    Word.run(async (context) => {
-        try {
-            const selection = context.document.getSelection();
-            const font = selection.font;
-            const paragraph = selection.paragraphs.getFirst();
-            
-            // 書式情報を読み込み
-            font.load('name, size, bold, italic, color, underline, highlightColor');
-            paragraph.load('alignment, leftIndent, rightIndent, lineSpacing, spaceAfter, spaceBefore');
-            
-            await context.sync();
-            
-            // 書式情報を保存
-            const formatData = {
-                font: {
-                    name: font.name,
-                    size: font.size,
-                    bold: font.bold,
-                    italic: font.italic,
-                    color: font.color,
-                    underline: font.underline,
-                    highlightColor: font.highlightColor
-                },
-                paragraph: {
-                    alignment: paragraph.alignment,
-                    leftIndent: paragraph.leftIndent,
-                    rightIndent: paragraph.rightIndent,
-                    lineSpacing: paragraph.lineSpacing,
-                    spaceAfter: paragraph.spaceAfter,
-                    spaceBefore: paragraph.spaceBefore
-                },
-                timestamp: new Date().toISOString()
-            };
-            
-            // ローカルストレージに保存
-            savedFormats[formatName] = formatData;
-            localStorage.setItem('savedFormats', JSON.stringify(savedFormats));
-            
-            // UIを更新
-            updateSavedFormatsList();
-            document.getElementById('format-name').value = '';
-            
-            showMessage(`書式「${formatName}」を保存しました`, 'success');
-            
-        } catch (error) {
-            console.error('書式保存エラー:', error);
-            showMessage('書式の保存に失敗しました', 'error');
-        }
-    });
-}
-
-// 書式を適用
-function applyFormat() {
-    if (!selectedFormat) {
-        showMessage('適用する書式を選択してください', 'error');
-        return;
-    }
-    
-    Word.run(async (context) => {
-        try {
-            const selection = context.document.getSelection();
-            const font = selection.font;
-            const paragraph = selection.paragraphs.getFirst();
-            
-            // 書式を適用
-            font.name = selectedFormat.font.name;
-            font.size = selectedFormat.font.size;
-            font.bold = selectedFormat.font.bold;
-            font.italic = selectedFormat.font.italic;
-            font.color = selectedFormat.font.color;
-            font.underline = selectedFormat.font.underline;
-            font.highlightColor = selectedFormat.font.highlightColor;
-            
-            paragraph.alignment = selectedFormat.paragraph.alignment;
-            paragraph.leftIndent = selectedFormat.paragraph.leftIndent;
-            paragraph.rightIndent = selectedFormat.paragraph.rightIndent;
-            paragraph.lineSpacing = selectedFormat.paragraph.lineSpacing;
-            paragraph.spaceAfter = selectedFormat.paragraph.spaceAfter;
-            paragraph.spaceBefore = selectedFormat.paragraph.spaceBefore;
-            
-            await context.sync();
-            
-            showMessage('書式を適用しました', 'success');
-            
-        } catch (error) {
-            console.error('書式適用エラー:', error);
-            showMessage('書式の適用に失敗しました', 'error');
-        }
-    });
-}
-
-// 書式をクリア
-function clearFormat() {
-    Word.run(async (context) => {
-        try {
-            const selection = context.document.getSelection();
-            const font = selection.font;
-            const paragraph = selection.paragraphs.getFirst();
-            
-            // 書式をクリア
-            font.name = 'Calibri';
-            font.size = 11;
-            font.bold = false;
-            font.italic = false;
-            font.color = 'black';
-            font.underline = 'None';
-            font.highlightColor = 'NoColor';
-            
-            paragraph.alignment = 'Left';
-            paragraph.leftIndent = 0;
-            paragraph.rightIndent = 0;
-            paragraph.lineSpacing = 0;
-            paragraph.spaceAfter = 0;
-            paragraph.spaceBefore = 0;
-            
-            await context.sync();
-            
-            showMessage('書式をクリアしました', 'success');
-            
-        } catch (error) {
-            console.error('書式クリアエラー:', error);
-            showMessage('書式のクリアに失敗しました', 'error');
-        }
-    });
+    const alignments = {
+        'Left': currentLanguage === 'ja' ? '左揃え' : 'Left',
+        'Center': currentLanguage === 'ja' ? '中央揃え' : 'Center',
+        'Right': currentLanguage === 'ja' ? '右揃え' : 'Right',
+        'Justified': currentLanguage === 'ja' ? '両端揃え' : 'Justified'
+    };
+    return alignments[alignment] || alignment;
 }
 
 // 保存された書式を読み込み
@@ -275,76 +344,54 @@ function loadSavedFormats() {
 
 // 保存された書式一覧を更新
 function updateSavedFormatsList() {
-    const savedFormatsList = document.getElementById('saved-formats');
+    const savedFormatsList = document.getElementById('saved-formats-list');
     
     if (Object.keys(savedFormats).length === 0) {
-        savedFormatsList.innerHTML = '<p>保存された書式がここに表示されます</p>';
+        savedFormatsList.innerHTML = `<p>${texts[currentLanguage].noSavedFormatsText}</p>`;
         return;
     }
     
     let html = '';
-    for (const [name, format] of Object.entries(savedFormats)) {
-        const date = new Date(format.timestamp).toLocaleDateString('ja-JP');
+    for (const [key, format] of Object.entries(savedFormats)) {
+        const date = new Date(format.timestamp).toLocaleDateString();
         html += `
-            <div class="format-item" data-format-name="${name}">
-                <div class="format-item-name">${name}</div>
-                <div class="format-item-preview">${format.font.name} ${format.font.size}px - ${getAlignmentText(format.paragraph.alignment)} (${date})</div>
+            <div class="format-item" data-key="${key}">
+                <div>
+                    <div class="format-key">${key}</div>
+                    <div class="format-preview">${format.font.name} ${format.font.size}px - ${getAlignmentText(format.paragraph.alignment)} (${date})</div>
+                </div>
+                <button class="format-remove" onclick="removeFormat('${key}')">×</button>
             </div>
         `;
     }
     
     savedFormatsList.innerHTML = html;
-    
-    // クリックイベントを追加
-    const formatItems = savedFormatsList.querySelectorAll('.format-item');
-    formatItems.forEach(item => {
-        item.addEventListener('click', () => {
-            // 選択状態を更新
-            formatItems.forEach(i => i.classList.remove('selected'));
-            item.classList.add('selected');
-            
-            // 選択された書式を設定
-            const formatName = item.dataset.formatName;
-            selectedFormat = savedFormats[formatName];
-            
-            // 適用ボタンを有効化
-            document.getElementById('apply-format').disabled = false;
-            
-            // 書式詳細を表示
-            displayFormatDetails(selectedFormat);
-        });
-    });
 }
 
-// 書式詳細を表示
-function displayFormatDetails(format) {
-    const formatDetails = document.getElementById('format-details');
-    
-    if (!format) {
-        formatDetails.innerHTML = '<p>書式の詳細情報がここに表示されます</p>';
-        return;
+// 書式の削除
+function removeFormat(key) {
+    if (confirm(`書式 "${key}" を削除しますか？`)) {
+        delete savedFormats[key];
+        localStorage.setItem('savedFormats', JSON.stringify(savedFormats));
+        updateSavedFormatsList();
     }
-    
-    const details = JSON.stringify(format, null, 2);
-    formatDetails.innerHTML = `<pre>${details}</pre>`;
 }
 
 // メッセージを表示
 function showMessage(message, type) {
     // 既存のメッセージを削除
-    const existingMessage = document.querySelector('.error-message, .success-message');
+    const existingMessage = document.querySelector('.status-message');
     if (existingMessage) {
         existingMessage.remove();
     }
     
     // 新しいメッセージを作成
     const messageDiv = document.createElement('div');
-    messageDiv.className = type === 'error' ? 'error-message' : 'success-message';
+    messageDiv.className = `status-message status-${type}`;
     messageDiv.textContent = message;
     
     // メッセージを表示
-    const saveButton = document.getElementById('save-format');
-    saveButton.parentNode.appendChild(messageDiv);
+    document.body.appendChild(messageDiv);
     
     // 3秒後にメッセージを削除
     setTimeout(() => {
@@ -353,3 +400,6 @@ function showMessage(message, type) {
         }
     }, 3000);
 }
+
+// グローバル関数として公開
+window.removeFormat = removeFormat;

@@ -13,71 +13,51 @@
     <link rel="stylesheet" type="text/css" href="taskpane.css" />
 </head>
 <body>
-    <div id="content-header">
-        <div class="ms-Grid">
-            <div class="ms-Grid-row">
-                <div class="ms-Grid-col ms-u-sm12">
-                    <h1 class="ms-font-xl">書式管理</h1>
-                </div>
+    <div id="app">
+        <!-- ヘッダー -->
+        <div id="header">
+            <h1 id="app-title">書式管理</h1>
+            <div id="language-selector">
+                <button id="lang-ja" class="lang-btn active">日本語</button>
+                <button id="lang-en" class="lang-btn">English</button>
             </div>
         </div>
-    </div>
-    
-    <div id="content-main">
-        <div class="ms-Grid">
-            <!-- 現在の書式表示セクション -->
-            <div class="ms-Grid-row">
-                <div class="ms-Grid-col ms-u-sm12">
-                    <h2 class="ms-font-l">現在の書式</h2>
-                    <div id="current-format" class="format-display">
-                        <p>テキストを選択して書式を確認してください</p>
-                    </div>
+        
+        <!-- メインコンテンツ -->
+        <div id="main-content">
+            <!-- 現在の書式表示 -->
+            <div id="current-format-section">
+                <h2 id="current-format-title">現在の書式</h2>
+                <div id="current-format-display">
+                    <p id="no-selection-text">テキストを選択してください</p>
                 </div>
             </div>
             
-            <!-- 書式保存セクション -->
-            <div class="ms-Grid-row">
-                <div class="ms-Grid-col ms-u-sm12">
-                    <h2 class="ms-font-l">書式の保存</h2>
-                    <div class="ms-TextField">
-                        <input id="format-name" class="ms-TextField-field" type="text" placeholder="書式名を入力" />
-                    </div>
-                    <button id="save-format" class="ms-Button ms-Button--primary">
-                        <span class="ms-Button-label">書式を保存</span>
-                    </button>
+            <!-- SAVE/LOAD領域 -->
+            <div id="save-load-section">
+                <div id="save-area" class="action-area" tabindex="0">
+                    <div class="area-label" id="save-label">SAVE</div>
+                    <div class="area-instruction" id="save-instruction">キーを押して保存</div>
+                </div>
+                <div id="load-area" class="action-area" tabindex="0">
+                    <div class="area-label" id="load-label">LOAD</div>
+                    <div class="area-instruction" id="load-instruction">キーを押して適用</div>
                 </div>
             </div>
             
             <!-- 保存された書式一覧 -->
-            <div class="ms-Grid-row">
-                <div class="ms-Grid-col ms-u-sm12">
-                    <h2 class="ms-font-l">保存された書式</h2>
-                    <div id="saved-formats" class="saved-formats-list">
-                        <p>保存された書式がここに表示されます</p>
-                    </div>
+            <div id="saved-formats-section">
+                <h2 id="saved-formats-title">保存された書式</h2>
+                <div id="saved-formats-list">
+                    <p id="no-saved-formats-text">保存された書式はありません</p>
                 </div>
             </div>
             
-            <!-- 書式適用セクション -->
-            <div class="ms-Grid-row">
-                <div class="ms-Grid-col ms-u-sm12">
-                    <h2 class="ms-font-l">書式の適用</h2>
-                    <button id="apply-format" class="ms-Button ms-Button--primary" disabled>
-                        <span class="ms-Button-label">選択した書式を適用</span>
-                    </button>
-                    <button id="clear-format" class="ms-Button">
-                        <span class="ms-Button-label">書式をクリア</span>
-                    </button>
-                </div>
-            </div>
-            
-            <!-- 書式詳細表示 -->
-            <div class="ms-Grid-row">
-                <div class="ms-Grid-col ms-u-sm12">
-                    <h2 class="ms-font-l">書式詳細</h2>
-                    <div id="format-details" class="format-details">
-                        <p>書式の詳細情報がここに表示されます</p>
-                    </div>
+            <!-- キーガイド -->
+            <div id="key-guide-section">
+                <h2 id="key-guide-title">キーガイド</h2>
+                <div id="key-guide-content">
+                    <p id="key-guide-text">SAVE領域でキーを押すと書式を保存、LOAD領域でキーを押すと書式を適用します</p>
                 </div>
             </div>
         </div>
