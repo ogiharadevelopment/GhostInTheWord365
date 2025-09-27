@@ -1,0 +1,40 @@
+{
+  "name": "word-format-manager",
+  "version": "1.0.0",
+  "description": "Word 365用の書式管理アドイン",
+  "main": "taskpane.html",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "office-addin-dev-server start manifest.xml",
+    "stop": "office-addin-dev-server stop manifest.xml",
+    "validate": "office-addin-manifest validate manifest.xml",
+    "sideload": "office-addin-dev-server sideload manifest.xml",
+    "unload": "office-addin-dev-server unload manifest.xml"
+  },
+  "keywords": [
+    "office",
+    "add-in",
+    "word",
+    "format",
+    "書式管理"
+  ],
+  "author": "Format Manager",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/office-js": "^1.0.0",
+    "office-addin-dev-server": "^1.0.0",
+    "office-addin-manifest": "^1.0.0"
+  },
+  "dependencies": {
+    "office-js": "^1.0.0",
+    "express": "^4.18.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/word-format-manager.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/word-format-manager/issues"
+  },
+  "homepage": "https://github.com/your-username/word-format-manager#readme"
+}

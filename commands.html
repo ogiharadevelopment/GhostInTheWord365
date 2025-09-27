@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <title>書式管理アドイン - コマンド</title>
+    
+    <!-- Office JavaScript API -->
+    <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+</head>
+<body>
+    <!-- コマンド用のスクリプト -->
+    <script type="text/javascript">
+        // Office.jsの初期化
+        Office.onReady((info) => {
+            if (info.host === Office.HostType.Word) {
+                // コマンドの初期化
+                initializeCommands();
+            }
+        });
+        
+        // コマンドの初期化
+        function initializeCommands() {
+            // 必要に応じてコマンドの処理を追加
+            console.log('コマンドが初期化されました');
+        }
+    </script>
+</body>
+</html>

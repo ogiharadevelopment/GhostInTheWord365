@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>書式管理アドイン</title>
+    
+    <!-- Office JavaScript API -->
+    <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+    
+    <!-- CSS -->
+    <link rel="stylesheet" type="text/css" href="taskpane.css" />
+</head>
+<body>
+    <div id="content-header">
+        <div class="ms-Grid">
+            <div class="ms-Grid-row">
+                <div class="ms-Grid-col ms-u-sm12">
+                    <h1 class="ms-font-xl">書式管理</h1>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="content-main">
+        <div class="ms-Grid">
+            <!-- 現在の書式表示セクション -->
+            <div class="ms-Grid-row">
+                <div class="ms-Grid-col ms-u-sm12">
+                    <h2 class="ms-font-l">現在の書式</h2>
+                    <div id="current-format" class="format-display">
+                        <p>テキストを選択して書式を確認してください</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 書式保存セクション -->
+            <div class="ms-Grid-row">
+                <div class="ms-Grid-col ms-u-sm12">
+                    <h2 class="ms-font-l">書式の保存</h2>
+                    <div class="ms-TextField">
+                        <input id="format-name" class="ms-TextField-field" type="text" placeholder="書式名を入力" />
+                    </div>
+                    <button id="save-format" class="ms-Button ms-Button--primary">
+                        <span class="ms-Button-label">書式を保存</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 保存された書式一覧 -->
+            <div class="ms-Grid-row">
+                <div class="ms-Grid-col ms-u-sm12">
+                    <h2 class="ms-font-l">保存された書式</h2>
+                    <div id="saved-formats" class="saved-formats-list">
+                        <p>保存された書式がここに表示されます</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 書式適用セクション -->
+            <div class="ms-Grid-row">
+                <div class="ms-Grid-col ms-u-sm12">
+                    <h2 class="ms-font-l">書式の適用</h2>
+                    <button id="apply-format" class="ms-Button ms-Button--primary" disabled>
+                        <span class="ms-Button-label">選択した書式を適用</span>
+                    </button>
+                    <button id="clear-format" class="ms-Button">
+                        <span class="ms-Button-label">書式をクリア</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 書式詳細表示 -->
+            <div class="ms-Grid-row">
+                <div class="ms-Grid-col ms-u-sm12">
+                    <h2 class="ms-font-l">書式詳細</h2>
+                    <div id="format-details" class="format-details">
+                        <p>書式の詳細情報がここに表示されます</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- JavaScript -->
+    <script type="text/javascript" src="taskpane.js"></script>
+</body>
+</html>
