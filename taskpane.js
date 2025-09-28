@@ -146,17 +146,17 @@ function initializeApp() {
         console.log('=== Element existence check ===');
         const saveArea = document.getElementById('save-area');
         const fontControl = document.getElementById('font-control');
-        const lineSpacingControl = document.getElementById('line-spacing-control');
+        const continuousControl = document.getElementById('continuous-control');
         const langJa = document.getElementById('lang-ja');
         const langEn = document.getElementById('lang-en');
-        
+
         console.log('Save area found:', !!saveArea);
         console.log('Font control found:', !!fontControl);
-        console.log('Line spacing control found:', !!lineSpacingControl);
+        console.log('Continuous control found:', !!continuousControl);
         console.log('Japanese button found:', !!langJa);
         console.log('English button found:', !!langEn);
         
-        if (!saveArea || !fontControl || !lineSpacingControl) {
+        if (!saveArea || !fontControl || !continuousControl) {
             console.error('❌ Critical elements missing - retrying in 500ms');
             window.appInitialized = false; // リトライのためにフラグをリセット
             setTimeout(initializeApp, 500);
@@ -291,7 +291,6 @@ function setupEventListeners() {
                 selectArea('continuous');
                 setTimeout(() => {
                     continuousControl.focus();
-                    continuousControl.click();
                 }, 10);
             });
             
@@ -300,11 +299,7 @@ function setupEventListeners() {
                 await restoreCursorPosition(); // カーソル位置を復元
             });
             
-            continuousControl.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                toggleContinuousMode();
-            });
+            continuousControl.addEventListener('keydown', handleKeyPress);
             
             console.log('✅ Continuous control events added');
         } else {
@@ -328,9 +323,9 @@ function setupEventListeners() {
             fontControl.addEventListener('focus', () => selectArea('font'));
             console.log('✅ Font control focus event added');
         }
-        if (lineSpacingControl) {
-            lineSpacingControl.addEventListener('focus', () => selectArea('lineSpacing'));
-            console.log('✅ Line spacing control focus event added');
+        if (continuousControl) {
+            continuousControl.addEventListener('focus', () => selectArea('continuous'));
+            console.log('✅ Continuous control focus event added');
         }
         
         // キーボードイベント
@@ -342,9 +337,9 @@ function setupEventListeners() {
             fontControl.addEventListener('keydown', handleKeyPress);
             console.log('✅ Font control keydown event added');
         }
-        if (lineSpacingControl) {
-            lineSpacingControl.addEventListener('keydown', handleKeyPress);
-            console.log('✅ Line spacing control keydown event added');
+        if (continuousControl) {
+            continuousControl.addEventListener('keydown', handleKeyPress);
+            console.log('✅ Continuous control keydown event added');
         }
         
         // クリックイベント（フォーカス用）
@@ -364,13 +359,14 @@ function setupEventListeners() {
             });
             console.log('✅ Font control click event added');
         }
-        if (lineSpacingControl) {
-            lineSpacingControl.addEventListener('click', (e) => {
+        if (continuousControl) {
+            continuousControl.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                lineSpacingControl.focus();
+                toggleContinuousMode();
+                continuousControl.focus();
             });
-            console.log('✅ Line spacing control click event added');
+            console.log('✅ Continuous control click event added');
         }
         
         // マウスリーブイベント（フォーカスを維持）
@@ -386,11 +382,11 @@ function setupEventListeners() {
             });
             console.log('✅ Font control mouseleave event added');
         }
-        if (lineSpacingControl) {
-            lineSpacingControl.addEventListener('mouseleave', () => {
+        if (continuousControl) {
+            continuousControl.addEventListener('mouseleave', () => {
                 // フォーカスを維持
             });
-            console.log('✅ Line spacing control mouseleave event added');
+            console.log('✅ Continuous control mouseleave event added');
         }
         
         console.log('✅ setupEventListeners completed successfully');
@@ -905,7 +901,7 @@ function updateCurrentFormat() {
             
             // 表示を更新
             updateFontSizeDisplay();
-            updateLineSpacingDisplay();
+            updateContinuousDisplay();
             
             // 現在の書式を表示
             displayCurrentFormat(currentFormat);
