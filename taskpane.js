@@ -809,10 +809,19 @@ function saveFormat(key) {
                         paragraph.spaceBefore = format.paragraph.spaceBefore;
                         console.log('✅ Space before applied:', format.paragraph.spaceBefore);
                     }
-                    if (format.paragraph.listFormat) {
+                    if (format.paragraph.listFormat && format.paragraph.listFormat.type !== 'None') {
                         console.log('📝 Applying list format:', format.paragraph.listFormat);
-                        paragraph.listFormat = format.paragraph.listFormat;
+                        const listFormat = paragraph.listFormat;
+                        listFormat.type = format.paragraph.listFormat.type;
+                        if (format.paragraph.listFormat.level !== undefined) {
+                            listFormat.level = format.paragraph.listFormat.level;
+                        }
                         console.log('✅ List format applied:', format.paragraph.listFormat);
+                    } else if (format.paragraph.listFormat && format.paragraph.listFormat.type === 'None') {
+                        console.log('📝 Removing list format');
+                        const listFormat = paragraph.listFormat;
+                        listFormat.type = 'None';
+                        console.log('✅ List format removed');
                     }
 
                     await context.sync();
@@ -920,7 +929,11 @@ function updateCurrentFormat() {
             
             // 書式情報を読み込み
             font.load('name, size, bold, italic, color, underline, highlightColor');
-            paragraph.load('alignment, leftIndent, rightIndent, lineSpacing, spaceAfter, spaceBefore, listFormat');
+            paragraph.load('alignment, leftIndent, rightIndent, lineSpacing, spaceAfter, spaceBefore');
+            
+            // 箇条書き情報を別途読み込み
+            const listFormat = paragraph.listFormat;
+            listFormat.load('type, level');
             
             await context.sync();
             
@@ -930,6 +943,11 @@ function updateCurrentFormat() {
                 bold: font.bold,
                 italic: font.italic,
                 color: font.color
+            });
+            
+            console.log('List format info:', {
+                type: listFormat.type,
+                level: listFormat.level
             });
             
             // 書式情報を取得
@@ -950,7 +968,10 @@ function updateCurrentFormat() {
                     lineSpacing: paragraph.lineSpacing,
                     spaceAfter: paragraph.spaceAfter,
                     spaceBefore: paragraph.spaceBefore,
-                    listFormat: paragraph.listFormat
+                    listFormat: {
+                        type: listFormat.type,
+                        level: listFormat.level
+                    }
                 }
             };
             
@@ -997,7 +1018,8 @@ function displayCurrentFormat(format) {
     let listInfo = '';
     if (paragraph.listFormat && paragraph.listFormat.type !== 'None') {
         const listTypeText = getListTypeText(paragraph.listFormat.type);
-        listInfo = ` | ${listTypeText}`;
+        const levelText = paragraph.listFormat.level !== undefined ? ` L${paragraph.listFormat.level}` : '';
+        listInfo = ` | ${listTypeText}${levelText}`;
     }
     
     const formatText = `
@@ -1027,7 +1049,9 @@ function getListTypeText(listType) {
     const listTypes = {
         'Bullet': currentLanguage === 'ja' ? '箇条書き' : 'Bullet',
         'Number': currentLanguage === 'ja' ? '番号付き' : 'Number',
-        'None': currentLanguage === 'ja' ? 'なし' : 'None'
+        'None': currentLanguage === 'ja' ? 'なし' : 'None',
+        'Outline': currentLanguage === 'ja' ? 'アウトライン' : 'Outline',
+        'Gallery': currentLanguage === 'ja' ? 'ギャラリー' : 'Gallery'
     };
     return listTypes[listType] || listType;
 }
@@ -1061,7 +1085,7 @@ function updateSavedFormatsList() {
             <div class="format-item" data-key="${key}" tabindex="0">
                 <div>
                     <div class="format-key">${key}</div>
-                    <div class="format-preview">${format.font.name} ${format.font.size}px - ${getAlignmentText(format.paragraph.alignment)}${format.paragraph.listFormat && format.paragraph.listFormat.type !== 'None' ? ' | ' + getListTypeText(format.paragraph.listFormat.type) : ''} (${date})</div>
+                    <div class="format-preview">${format.font.name} ${format.font.size}px - ${getAlignmentText(format.paragraph.alignment)}${format.paragraph.listFormat && format.paragraph.listFormat.type !== 'None' ? ' | ' + getListTypeText(format.paragraph.listFormat.type) + (format.paragraph.listFormat.level !== undefined ? ' L' + format.paragraph.listFormat.level : '') : ''} (${date})</div>
                 </div>
                 <button class="format-remove" data-key="${key}">×</button>
             </div>
