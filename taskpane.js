@@ -25,7 +25,7 @@ const texts = {
         savedFormatsTitle: '保存された書式',
         noSavedFormatsText: '保存された書式はありません',
         keyGuideTitle: 'キーガイド',
-        keyGuideText: 'LOADボタンにマウスオーバーしてキーを押すと書式を適用します',
+        keyGuideText: '保存された書式にマウスオーバーしてキーを押すと書式を適用します',
         fontLabel: 'フォント',
         continuousLabel: '連続',
         formatSaved: '書式を保存しました',
@@ -55,7 +55,7 @@ const texts = {
         savedFormatsTitle: 'Saved Formats',
         noSavedFormatsText: 'No saved formats',
         keyGuideTitle: 'Key Guide',
-        keyGuideText: 'Mouse over LOAD button and press a key to apply format',
+        keyGuideText: 'Mouse over a saved format and press a key to apply it',
         fontLabel: 'Font',
         continuousLabel: 'Continuous',
         formatSaved: 'Format saved',
@@ -145,20 +145,18 @@ function initializeApp() {
         // 要素の存在確認
         console.log('=== Element existence check ===');
         const saveArea = document.getElementById('save-area');
-        const loadArea = document.getElementById('load-area');
         const fontControl = document.getElementById('font-control');
         const continuousControl = document.getElementById('continuous-control');
         const langJa = document.getElementById('lang-ja');
         const langEn = document.getElementById('lang-en');
         
         console.log('Save area found:', !!saveArea);
-        console.log('Load area found:', !!loadArea);
         console.log('Font control found:', !!fontControl);
         console.log('Continuous control found:', !!continuousControl);
         console.log('Japanese button found:', !!langJa);
         console.log('English button found:', !!langEn);
         
-        if (!saveArea || !loadArea || !fontControl || !continuousControl) {
+        if (!saveArea || !fontControl || !continuousControl) {
             console.error('❌ Critical elements missing - retrying in 500ms');
             window.appInitialized = false; // リトライのためにフラグをリセット
             setTimeout(initializeApp, 500);
@@ -231,7 +229,6 @@ function setupEventListeners() {
     
         // コントロール領域のイベント
         const saveArea = document.getElementById('save-area');
-        const loadArea = document.getElementById('load-area');
         const fontControl = document.getElementById('font-control');
         const continuousControl = document.getElementById('continuous-control');
         const widthToggle = document.getElementById('width-toggle');
@@ -259,31 +256,6 @@ function setupEventListeners() {
             console.log('✅ Save area mouseenter event added');
         } else {
             console.error('❌ Save area not found');
-        }
-        
-        if (loadArea) {
-            console.log('✅ Load area found');
-            // マウスイベント
-            loadArea.addEventListener('mouseenter', async (e) => {
-                console.log('🖱️ Load area mouseenter');
-                e.preventDefault();
-                await saveCursorPosition(); // カーソル位置を保存
-                selectArea('load');
-                setTimeout(() => {
-                    loadArea.focus();
-                    loadArea.click();
-                }, 10);
-            });
-            
-            loadArea.addEventListener('mouseleave', async (e) => {
-                console.log('🖱️ Load area mouseleave');
-                await restoreCursorPosition(); // カーソル位置を復元
-            });
-            
-            loadArea.addEventListener('keydown', handleKeyPress);
-            console.log('✅ Load area events added');
-        } else {
-            console.error('❌ Load area not found');
         }
         
         if (fontControl) {
@@ -355,10 +327,6 @@ function setupEventListeners() {
             continuousControl.addEventListener('focus', () => selectArea('continuous'));
             console.log('✅ Continuous control focus event added');
         }
-        if (loadArea) {
-            loadArea.addEventListener('focus', () => selectArea('load'));
-            console.log('✅ Load area focus event added');
-        }
         
         // キーボードイベント
         if (saveArea) {
@@ -372,10 +340,6 @@ function setupEventListeners() {
         if (continuousControl) {
             continuousControl.addEventListener('keydown', handleKeyPress);
             console.log('✅ Continuous control keydown event added');
-        }
-        if (loadArea) {
-            loadArea.addEventListener('keydown', handleKeyPress);
-            console.log('✅ Load area keydown event added');
         }
         
         // クリックイベント（フォーカス用）
@@ -404,14 +368,6 @@ function setupEventListeners() {
             });
             console.log('✅ Continuous control click event added');
         }
-        if (loadArea) {
-            loadArea.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                loadArea.focus();
-            });
-            console.log('✅ Load area click event added');
-        }
         
         // マウスリーブイベント（フォーカスを維持）
         if (saveArea) {
@@ -431,12 +387,6 @@ function setupEventListeners() {
                 // フォーカスを維持
             });
             console.log('✅ Continuous control mouseleave event added');
-        }
-        if (loadArea) {
-            loadArea.addEventListener('mouseleave', () => {
-                // フォーカスを維持
-            });
-            console.log('✅ Load area mouseleave event added');
         }
         
         console.log('✅ setupEventListeners completed successfully');
@@ -482,8 +432,6 @@ function updateUI() {
         'key-guide-text': t.keyGuideText,
         'font-label': t.fontLabel,
         'continuous-label': t.continuousLabel,
-        'load-label': t.loadLabel,
-        'load-instruction': t.loadInstruction,
         'width-toggle': t.widthToggle,
         'saved-formats-instruction': t.savedFormatsInstruction,
         'lang-ja': t.japanese,
@@ -630,8 +578,6 @@ function handleKeyPress(event) {
     
     if (targetId === 'save-area') {
         saveFormat(key);
-    } else if (targetId === 'load-area') {
-        loadFormat(key);
     } else if (targetId === 'font-control') {
         adjustFontSize(key);
     } else if (targetId === 'continuous-control') {
@@ -1019,9 +965,47 @@ function updateSavedFormatsList() {
         });
     });
     
-    // 書式項目は表示のみ、書式適用機能は削除
+    // 書式項目のイベントリスナーを追加
+    const formatItems = savedFormatsList.querySelectorAll('.format-item');
+    formatItems.forEach(item => {
+        item.addEventListener('mouseenter', async (e) => {
+            console.log('🖱️ Format item mouseenter');
+            e.preventDefault();
+            await saveCursorPosition(); // カーソル位置を保存
+            item.focus();
+        });
+        
+        item.addEventListener('mouseleave', async (e) => {
+            console.log('🖱️ Format item mouseleave');
+            await restoreCursorPosition(); // カーソル位置を復元
+        });
+        
+        item.addEventListener('keydown', (e) => {
+            if (e.key !== 'Tab' && e.key !== 'Shift' && e.key !== 'Control' && 
+                e.key !== 'Alt' && e.key !== 'Meta' && e.key !== 'CapsLock' &&
+                e.key !== 'Enter' && e.key !== 'Escape' && e.key !== 'ArrowUp' &&
+                e.key !== 'ArrowDown' && e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') {
+                e.preventDefault();
+                e.stopPropagation();
+                const key = e.key.toLowerCase();
+                loadFormat(key);
+            }
+        });
+    });
     
-    // スクロールビューのイベントリスナーは削除
+    // スクロールビュー全体のイベントリスナーを追加
+    const savedFormatsSection = document.getElementById('saved-formats-section');
+    const instructionText = document.getElementById('saved-formats-instruction');
+    
+    if (savedFormatsSection && instructionText) {
+        savedFormatsSection.addEventListener('mouseenter', () => {
+            instructionText.style.opacity = '1';
+        });
+        
+        savedFormatsSection.addEventListener('mouseleave', () => {
+            instructionText.style.opacity = '0.7';
+        });
+    }
 }
 
 // 書式の削除
