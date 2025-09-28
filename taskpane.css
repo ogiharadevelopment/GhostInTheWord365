@@ -115,13 +115,19 @@ h2 {
     line-height: 1.5;
 }
 
-/* コントロール行 */
-#control-row {
+/* コントロールグリッド */
+#control-grid {
     display: flex;
+    flex-direction: column;
     gap: 10px;
     margin: 20px 0;
+}
+
+.control-row {
+    display: flex;
+    gap: 10px;
     align-items: center;
-    justify-content: flex-start;
+    justify-content: center;
 }
 
 .control-area {
@@ -397,7 +403,7 @@ h2 {
 
 /* レスポンシブ対応 */
 @media (max-width: 400px) {
-    #control-row {
+    .control-row {
         flex-direction: column;
         align-items: center;
         gap: 15px;
