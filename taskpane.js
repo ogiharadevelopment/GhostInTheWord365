@@ -701,35 +701,79 @@ function saveFormat(key) {
                         hasSelection: selection.text && selection.text.trim() !== ''
                     });
 
-                    // 書式を適用
+                    // 書式を適用（選択されていない状態でも適用可能）
                     const font = selection.font;
                     const paragraph = selection.paragraphs.getFirst();
 
+                    console.log('🎨 Applying format to selection:', {
+                        hasSelection: selection.text && selection.text.trim() !== '',
+                        selectedText: selection.text
+                    });
+
                     // フォント書式を適用
-                    if (format.font.name) font.name = format.font.name;
-                    if (format.font.size) font.size = format.font.size;
-                    if (format.font.bold !== undefined) font.bold = format.font.bold;
-                    if (format.font.italic !== undefined) font.italic = format.font.italic;
-                    if (format.font.color) font.color = format.font.color;
-                    if (format.font.underline !== undefined) font.underline = format.font.underline;
-                    if (format.font.highlightColor) font.highlightColor = format.font.highlightColor;
+                    if (format.font.name) {
+                        font.name = format.font.name;
+                        console.log('✅ Font name applied:', format.font.name);
+                    }
+                    if (format.font.size) {
+                        font.size = format.font.size;
+                        console.log('✅ Font size applied:', format.font.size);
+                    }
+                    if (format.font.bold !== undefined) {
+                        font.bold = format.font.bold;
+                        console.log('✅ Bold applied:', format.font.bold);
+                    }
+                    if (format.font.italic !== undefined) {
+                        font.italic = format.font.italic;
+                        console.log('✅ Italic applied:', format.font.italic);
+                    }
+                    if (format.font.color) {
+                        font.color = format.font.color;
+                        console.log('✅ Font color applied:', format.font.color);
+                    }
+                    if (format.font.underline !== undefined) {
+                        font.underline = format.font.underline;
+                        console.log('✅ Underline applied:', format.font.underline);
+                    }
+                    if (format.font.highlightColor) {
+                        font.highlightColor = format.font.highlightColor;
+                        console.log('✅ Highlight color applied:', format.font.highlightColor);
+                    }
 
                     // 段落書式を適用
-                    if (format.paragraph.alignment) paragraph.alignment = format.paragraph.alignment;
-                    if (format.paragraph.leftIndent !== undefined) paragraph.leftIndent = format.paragraph.leftIndent;
-                    if (format.paragraph.rightIndent !== undefined) paragraph.rightIndent = format.paragraph.rightIndent;
-                    if (format.paragraph.lineSpacing !== undefined) paragraph.lineSpacing = format.paragraph.lineSpacing;
-                    if (format.paragraph.spaceAfter !== undefined) paragraph.spaceAfter = format.paragraph.spaceAfter;
-                    if (format.paragraph.spaceBefore !== undefined) paragraph.spaceBefore = format.paragraph.spaceBefore;
+                    if (format.paragraph.alignment) {
+                        paragraph.alignment = format.paragraph.alignment;
+                        console.log('✅ Alignment applied:', format.paragraph.alignment);
+                    }
+                    if (format.paragraph.leftIndent !== undefined) {
+                        paragraph.leftIndent = format.paragraph.leftIndent;
+                        console.log('✅ Left indent applied:', format.paragraph.leftIndent);
+                    }
+                    if (format.paragraph.rightIndent !== undefined) {
+                        paragraph.rightIndent = format.paragraph.rightIndent;
+                        console.log('✅ Right indent applied:', format.paragraph.rightIndent);
+                    }
+                    if (format.paragraph.lineSpacing !== undefined) {
+                        paragraph.lineSpacing = format.paragraph.lineSpacing;
+                        console.log('✅ Line spacing applied:', format.paragraph.lineSpacing);
+                    }
+                    if (format.paragraph.spaceAfter !== undefined) {
+                        paragraph.spaceAfter = format.paragraph.spaceAfter;
+                        console.log('✅ Space after applied:', format.paragraph.spaceAfter);
+                    }
+                    if (format.paragraph.spaceBefore !== undefined) {
+                        paragraph.spaceBefore = format.paragraph.spaceBefore;
+                        console.log('✅ Space before applied:', format.paragraph.spaceBefore);
+                    }
 
                     await context.sync();
 
-                    // リボンメニューの書式設定を更新
-                    await updateRibbonFormat(format, context);
+                    // アドイン内の書式表示を更新
+                    await updateCurrentFormatDisplay(format);
 
                     const message = selection.text && selection.text.trim() !== ''
                         ? `${key}: ${texts[currentLanguage].formatApplied}`
-                        : `${key}: ${texts[currentLanguage].formatApplied} (リボンに反映)`;
+                        : `${key}: ${texts[currentLanguage].formatApplied} (次回入力用)`;
                     showMessage(message, 'success');
 
                     // 書式適用後にカーソル位置を復元
@@ -746,77 +790,37 @@ function saveFormat(key) {
             });
         }
 
-        // リボンメニューの書式設定を更新
-        async function updateRibbonFormat(format, context) {
+        // 現在の書式をアドイン内で管理・表示
+        async function updateCurrentFormatDisplay(format) {
             try {
-                console.log('🎨 Updating ribbon format:', format);
+                console.log('🎨 Updating current format display:', format);
                 
-                // 現在の選択範囲を取得
-                const selection = context.document.getSelection();
-                const font = selection.font;
-                const paragraph = selection.paragraphs.getFirst();
-
-                // フォント書式をリボンに反映
-                if (format.font.name) {
-                    font.name = format.font.name;
-                    console.log('✅ Font name set to:', format.font.name);
-                }
+                // 現在の書式をグローバル変数に保存
+                currentFormat = format;
+                
+                // フォントサイズと行間を更新
                 if (format.font.size) {
-                    font.size = format.font.size;
-                    console.log('✅ Font size set to:', format.font.size);
+                    currentFontSize = format.font.size;
+                    updateFontSizeDisplay();
                 }
-                if (format.font.bold !== undefined) {
-                    font.bold = format.font.bold;
-                    console.log('✅ Bold set to:', format.font.bold);
+                if (format.paragraph.lineSpacing) {
+                    currentLineSpacing = format.paragraph.lineSpacing;
+                    updateLineSpacingDisplay();
                 }
-                if (format.font.italic !== undefined) {
-                    font.italic = format.font.italic;
-                    console.log('✅ Italic set to:', format.font.italic);
-                }
-                if (format.font.color) {
-                    font.color = format.font.color;
-                    console.log('✅ Font color set to:', format.font.color);
-                }
-                if (format.font.underline !== undefined) {
-                    font.underline = format.font.underline;
-                    console.log('✅ Underline set to:', format.font.underline);
-                }
-                if (format.font.highlightColor) {
-                    font.highlightColor = format.font.highlightColor;
-                    console.log('✅ Highlight color set to:', format.font.highlightColor);
-                }
-
-                // 段落書式をリボンに反映
-                if (format.paragraph.alignment) {
-                    paragraph.alignment = format.paragraph.alignment;
-                    console.log('✅ Alignment set to:', format.paragraph.alignment);
-                }
-                if (format.paragraph.leftIndent !== undefined) {
-                    paragraph.leftIndent = format.paragraph.leftIndent;
-                    console.log('✅ Left indent set to:', format.paragraph.leftIndent);
-                }
-                if (format.paragraph.rightIndent !== undefined) {
-                    paragraph.rightIndent = format.paragraph.rightIndent;
-                    console.log('✅ Right indent set to:', format.paragraph.rightIndent);
-                }
-                if (format.paragraph.lineSpacing !== undefined) {
-                    paragraph.lineSpacing = format.paragraph.lineSpacing;
-                    console.log('✅ Line spacing set to:', format.paragraph.lineSpacing);
-                }
-                if (format.paragraph.spaceAfter !== undefined) {
-                    paragraph.spaceAfter = format.paragraph.spaceAfter;
-                    console.log('✅ Space after set to:', format.paragraph.spaceAfter);
-                }
-                if (format.paragraph.spaceBefore !== undefined) {
-                    paragraph.spaceBefore = format.paragraph.spaceBefore;
-                    console.log('✅ Space before set to:', format.paragraph.spaceBefore);
-                }
-
-                await context.sync();
-                console.log('✅ Ribbon format updated successfully');
+                
+                // 現在の書式表示を更新
+                displayCurrentFormat(format);
+                
+                console.log('✅ Current format display updated successfully');
+                console.log('📊 Current format:', {
+                    fontSize: currentFontSize,
+                    lineSpacing: currentLineSpacing,
+                    fontName: format.font.name,
+                    alignment: format.paragraph.alignment
+                });
 
             } catch (error) {
-                console.error('❌ Failed to update ribbon format:', error);
+                console.error('❌ Failed to update current format display:', error);
             }
         }
 
@@ -1280,8 +1284,8 @@ function updateLineSpacingDisplay() {
                     await context.sync();
                     console.log('✅ Current format applied successfully');
 
-                    // リボンメニューの書式設定も更新
-                    await updateRibbonFormat(currentFormat, context);
+                    // アドイン内の書式表示も更新
+                    await updateCurrentFormatDisplay(currentFormat);
 
                 } catch (error) {
                     console.error('書式適用エラー:', error);
