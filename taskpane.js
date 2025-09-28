@@ -1231,6 +1231,7 @@ function updateSavedFormatsList() {
                 console.log('🗑️ Button dataset:', button.dataset);
                 e.preventDefault();
                 e.stopPropagation();
+                e.stopImmediatePropagation();
                 const key = button.dataset.key;
                 console.log('🗑️ Delete button clicked for key:', key);
                 if (key) {
@@ -1239,13 +1240,14 @@ function updateSavedFormatsList() {
                 } else {
                     console.error('🗑️ No key found for delete button');
                 }
-            });
+            }, true); // capture: true で先に処理
             
             button.addEventListener('mousedown', (e) => {
                 console.log('🗑️ Delete button mousedown event');
                 e.preventDefault();
                 e.stopPropagation();
-            });
+                e.stopImmediatePropagation();
+            }, true); // capture: true で先に処理
         });
         
         // 既存の書式項目のイベントリスナーを削除（重複防止）
@@ -1264,14 +1266,13 @@ function updateSavedFormatsList() {
                     return;
                 }
                 
-                e.preventDefault();
-                e.stopPropagation();
-                
                 // 書式キーを取得して適用
                 const formatKey = item.querySelector('.format-key');
                 if (formatKey) {
                     const key = formatKey.textContent;
                     console.log('🎨 Format item clicked, applying format:', key);
+                    e.preventDefault();
+                    e.stopPropagation();
                     loadFormat(key);
                 }
             });
