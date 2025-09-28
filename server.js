@@ -29,3 +29,4 @@ app.listen(port, () => {
     console.log(`Word 365 書式管理アドイン サーバーが起動しました: http://localhost:${port}`);
     console.log('Word 365でアドインをサイドロードしてください。');
 });
+

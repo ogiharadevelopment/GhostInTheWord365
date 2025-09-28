@@ -8,6 +8,7 @@ let currentFontSize = 12;
 let currentLineSpacing = 1.0;
 let isWideMode = true;
 let selectedArea = null;
+let savedCursorPosition = null; // カーソル位置を保存
 
 // 多言語対応テキスト
 const texts = {
@@ -223,8 +224,9 @@ function setupEventListeners() {
         if (saveArea) {
             console.log('✅ Save area found');
             // マウスイベント
-            saveArea.addEventListener('mouseenter', (e) => {
+            saveArea.addEventListener('mouseenter', async (e) => {
                 e.preventDefault();
+                await saveCursorPosition(); // カーソル位置を保存
                 selectArea('save');
                 // フォーカスを確実に取得
                 setTimeout(() => {
@@ -232,6 +234,11 @@ function setupEventListeners() {
                     saveArea.click();
                 }, 10);
             });
+            
+            saveArea.addEventListener('mouseleave', async (e) => {
+                await restoreCursorPosition(); // カーソル位置を復元
+            });
+            
             console.log('✅ Save area mouseenter event added');
         } else {
             console.error('❌ Save area not found');
@@ -239,14 +246,20 @@ function setupEventListeners() {
         
         if (fontControl) {
             console.log('✅ Font control found');
-            fontControl.addEventListener('mouseenter', (e) => {
+            fontControl.addEventListener('mouseenter', async (e) => {
                 e.preventDefault();
+                await saveCursorPosition(); // カーソル位置を保存
                 selectArea('font');
                 setTimeout(() => {
                     fontControl.focus();
                     fontControl.click();
                 }, 10);
             });
+            
+            fontControl.addEventListener('mouseleave', async (e) => {
+                await restoreCursorPosition(); // カーソル位置を復元
+            });
+            
             fontControl.addEventListener('wheel', handleFontWheel);
             console.log('✅ Font control events added');
         } else {
@@ -255,14 +268,20 @@ function setupEventListeners() {
         
         if (lineSpacingControl) {
             console.log('✅ Line spacing control found');
-            lineSpacingControl.addEventListener('mouseenter', (e) => {
+            lineSpacingControl.addEventListener('mouseenter', async (e) => {
                 e.preventDefault();
+                await saveCursorPosition(); // カーソル位置を保存
                 selectArea('lineSpacing');
                 setTimeout(() => {
                     lineSpacingControl.focus();
                     lineSpacingControl.click();
                 }, 10);
             });
+            
+            lineSpacingControl.addEventListener('mouseleave', async (e) => {
+                await restoreCursorPosition(); // カーソル位置を復元
+            });
+            
             lineSpacingControl.addEventListener('wheel', handleLineSpacingWheel);
             console.log('✅ Line spacing control events added');
         } else {
@@ -410,6 +429,63 @@ function updateUI() {
     }
 }
 
+// カーソル位置を保存
+async function saveCursorPosition() {
+    try {
+        if (typeof Word === 'undefined') return;
+        
+        await Word.run(async (context) => {
+            const selection = context.document.getSelection();
+            selection.load('text');
+            await context.sync();
+            
+            if (selection.text && selection.text.trim() !== '') {
+                // テキストが選択されている場合は選択範囲を保存
+                savedCursorPosition = {
+                    type: 'selection',
+                    text: selection.text,
+                    start: selection.start,
+                    end: selection.end
+                };
+            } else {
+                // カーソル位置のみの場合は位置を保存
+                savedCursorPosition = {
+                    type: 'cursor',
+                    position: selection.start
+                };
+            }
+            
+            console.log('Cursor position saved:', savedCursorPosition);
+        });
+    } catch (error) {
+        console.error('Failed to save cursor position:', error);
+    }
+}
+
+// カーソル位置を復元
+async function restoreCursorPosition() {
+    try {
+        if (!savedCursorPosition || typeof Word === 'undefined') return;
+        
+        await Word.run(async (context) => {
+            const selection = context.document.getSelection();
+            
+            if (savedCursorPosition.type === 'selection') {
+                // 選択範囲を復元
+                selection.select(savedCursorPosition.start, savedCursorPosition.end);
+            } else if (savedCursorPosition.type === 'cursor') {
+                // カーソル位置を復元
+                selection.select(savedCursorPosition.position, savedCursorPosition.position);
+            }
+            
+            await context.sync();
+            console.log('Cursor position restored:', savedCursorPosition);
+        });
+    } catch (error) {
+        console.error('Failed to restore cursor position:', error);
+    }
+}
+
 // 領域の選択
 function selectArea(area) {
     selectedArea = area;
@@ -529,10 +605,13 @@ function loadFormat(key) {
             
             await context.sync();
             
-            const message = selection.text && selection.text.trim() !== '' 
+            const message = selection.text && selection.text.trim() !== ''
                 ? `${key}: ${texts[currentLanguage].formatApplied}`
                 : `${key}: ${texts[currentLanguage].formatApplied} (カーソル位置)`;
             showMessage(message, 'success');
+            
+            // 書式適用後にカーソル位置を復元
+            await restoreCursorPosition();
             
         } catch (error) {
             console.error('書式適用エラー:', error);
@@ -738,9 +817,14 @@ function updateSavedFormatsList() {
     // 書式項目のイベントリスナーを追加
     const formatItems = savedFormatsList.querySelectorAll('.format-item');
     formatItems.forEach(item => {
-        item.addEventListener('mouseenter', (e) => {
+        item.addEventListener('mouseenter', async (e) => {
             e.preventDefault();
+            await saveCursorPosition(); // カーソル位置を保存
             item.focus();
+        });
+        
+        item.addEventListener('mouseleave', async (e) => {
+            await restoreCursorPosition(); // カーソル位置を復元
         });
         
         item.addEventListener('keydown', (e) => {
