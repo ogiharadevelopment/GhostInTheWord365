@@ -447,34 +447,80 @@ async function saveCursorPosition() {
         
         await Word.run(async (context) => {
             const selection = context.document.getSelection();
-            selection.load('text, start, end');
+            
+            // より詳細な情報を取得
+            selection.load('text, start, end, isEmpty');
             await context.sync();
             
             console.log('📝 Selection info:', {
                 text: selection.text,
                 start: selection.start,
                 end: selection.end,
-                textLength: selection.text ? selection.text.length : 0
+                isEmpty: selection.isEmpty,
+                textLength: selection.text ? selection.text.length : 0,
+                startType: typeof selection.start,
+                endType: typeof selection.end
             });
             
-            if (selection.text && selection.text.trim() !== '') {
+            // 位置情報を取得（複数の方法を試行）
+            let startPos = null;
+            let endPos = null;
+            
+            try {
+                // 方法1: 直接取得
+                if (selection.start !== undefined && selection.start !== null) {
+                    startPos = selection.start.toString();
+                }
+                if (selection.end !== undefined && selection.end !== null) {
+                    endPos = selection.end.toString();
+                }
+                
+                // 方法2: 範囲オブジェクトから取得
+                if (!startPos || !endPos) {
+                    const range = selection.getRange();
+                    range.load('start, end');
+                    await context.sync();
+                    
+                    if (range.start !== undefined) {
+                        startPos = range.start.toString();
+                    }
+                    if (range.end !== undefined) {
+                        endPos = range.end.toString();
+                    }
+                }
+                
+                console.log('📍 Position extraction result:', {
+                    startPos,
+                    endPos,
+                    startValid: startPos !== null && startPos !== 'undefined',
+                    endValid: endPos !== null && endPos !== 'undefined'
+                });
+                
+            } catch (posError) {
+                console.warn('⚠️ Position extraction failed:', posError);
+            }
+            
+            if (selection.text && selection.text.trim() !== '' && startPos && endPos) {
                 // テキストが選択されている場合は選択範囲を保存
                 savedCursorPosition = {
                     type: 'selection',
                     text: selection.text,
-                    start: selection.start,
-                    end: selection.end,
+                    start: startPos,
+                    end: endPos,
                     timestamp: new Date().toISOString()
                 };
                 console.log('✅ Selection range saved:', savedCursorPosition);
-            } else {
+            } else if (startPos) {
                 // カーソル位置のみの場合は位置を保存
                 savedCursorPosition = {
                     type: 'cursor',
-                    position: selection.start,
+                    position: startPos,
                     timestamp: new Date().toISOString()
                 };
                 console.log('✅ Cursor position saved:', savedCursorPosition);
+            } else {
+                console.warn('⚠️ Could not extract valid position information');
+                savedCursorPosition = null;
             }
         });
     } catch (error) {
@@ -508,11 +554,22 @@ async function restoreCursorPosition() {
                     end: savedCursorPosition.end,
                     text: savedCursorPosition.text
                 });
-                selection.select(savedCursorPosition.start, savedCursorPosition.end);
+                
+                if (savedCursorPosition.start && savedCursorPosition.end) {
+                    // 文字列から数値に変換して選択
+                    const startPos = parseInt(savedCursorPosition.start);
+                    const endPos = parseInt(savedCursorPosition.end);
+                    selection.select(startPos, endPos);
+                }
             } else if (savedCursorPosition.type === 'cursor') {
                 // カーソル位置を復元
                 console.log('📍 Restoring cursor position:', savedCursorPosition.position);
-                selection.select(savedCursorPosition.position, savedCursorPosition.position);
+                
+                if (savedCursorPosition.position) {
+                    // 文字列から数値に変換して選択
+                    const pos = parseInt(savedCursorPosition.position);
+                    selection.select(pos, pos);
+                }
             }
             
             await context.sync();
