@@ -11,6 +11,7 @@ let selectedArea = null;
 let savedCursorPosition = null; // カーソル位置を保存
 let continuousMode = false; // 連続モード
 let continuousFormat = null; // 連続適用用の書式
+let isMouseOverSaveArea = false; // SAVEエリアのマウスオーバー状態
 
 // 多言語対応テキスト
 const texts = {
@@ -239,17 +240,18 @@ function setupEventListeners() {
             saveArea.addEventListener('mouseenter', async (e) => {
                 console.log('🖱️ Save area mouseenter');
                 e.preventDefault();
+                isMouseOverSaveArea = true; // マウスオーバー状態を設定
                 await saveCursorPosition(); // カーソル位置を保存
                 selectArea('save');
                 // フォーカスを確実に取得
                 setTimeout(() => {
                     saveArea.focus();
-                    saveArea.click();
                 }, 10);
             });
             
             saveArea.addEventListener('mouseleave', async (e) => {
                 console.log('🖱️ Save area mouseleave');
+                isMouseOverSaveArea = false; // マウスオーバー状態を解除
                 await restoreCursorPosition(); // カーソル位置を復元
             });
             
@@ -362,6 +364,7 @@ function setupEventListeners() {
             continuousControl.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                // クリックのみでオン/オフ切り替え
                 toggleContinuousMode();
                 continuousControl.focus();
             });
@@ -576,11 +579,15 @@ function handleKeyPress(event) {
     console.log(`Key pressed: ${key} in ${targetId}`);
     
     if (targetId === 'save-area') {
-        saveFormat(key);
+        // SAVEエリアはマウスオーバー中のみキー入力を受け付ける
+        if (isMouseOverSaveArea) {
+            saveFormat(key);
+        }
     } else if (targetId === 'font-control') {
         adjustFontSize(key);
     } else if (targetId === 'continuous-control') {
-        saveContinuousFormat(key);
+        // 連続ボタンは既存の保存された書式を連続適用用に設定
+        setContinuousFormat(key);
     }
     
     // 視覚的フィードバック
@@ -1200,7 +1207,7 @@ function updateContinuousDisplay() {
 }
 
 // 連続適用用の書式を設定（既存の保存された書式から取得）
-function saveContinuousFormat(key) {
+function setContinuousFormat(key) {
     if (!savedFormats[key]) {
         showMessage(texts[currentLanguage].formatNotFound, 'error');
         return;
@@ -1214,7 +1221,7 @@ function saveContinuousFormat(key) {
         };
 
         const t = texts[currentLanguage];
-        showMessage(`${key}: ${t.continuousFormatSaved}`, 'success');
+        showMessage(`${key}: 連続適用用書式を設定しました`, 'success');
         
         // 表示を更新
         updateContinuousDisplay();
