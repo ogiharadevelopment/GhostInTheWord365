@@ -15,11 +15,7 @@ function detectLanguage() {
     }
 }
 
-// 初期化時に言語を設定
-loadLanguage(); // 保存された言語設定を読み込み
-if (!currentLanguage) {
-    currentLanguage = detectLanguage(); // 保存されていない場合はブラウザの言語を検出
-}
+// 初期化時に言語を設定（texts定義後に移動）
 
 // 言語切り替え関数
 function setLanguage(lang) {
@@ -115,6 +111,12 @@ const texts = {
     }
 };
 
+// 初期化時に言語を設定
+loadLanguage(); // 保存された言語設定を読み込み
+if (!currentLanguage) {
+    currentLanguage = detectLanguage(); // 保存されていない場合はブラウザの言語を検出
+}
+
 // Office.jsの初期化
 Office.onReady((info) => {
     console.log('=== Office.onReady called ===');
@@ -170,11 +172,7 @@ function initializeApp() {
         checkWordAPIAvailability();
         
         console.log('Step 2: Language setup');
-        // 言語設定の読み込みとUI更新
-        loadLanguage();
-        if (!currentLanguage) {
-            currentLanguage = detectLanguage();
-        }
+        // 言語設定は既に初期化時に設定済み
         console.log('Current language:', currentLanguage);
         
         console.log('Step 3: UI update');
