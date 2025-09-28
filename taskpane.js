@@ -4,13 +4,13 @@
 let currentFormat = null;
 let savedFormats = {};
 let currentLanguage = 'ja';
-        let currentFontSize = 12;
-        let currentLineSpacing = 1.0;
-        let isWideMode = true;
-        let selectedArea = null;
-        let savedCursorPosition = null; // カーソル位置を保存
-        let continuousMode = false; // 連続モード
-        let continuousFormat = null; // 連続適用用の書式
+let currentFontSize = 12;
+let currentLineSpacing = 1.0;
+let isWideMode = true;
+let selectedArea = null;
+let savedCursorPosition = null; // カーソル位置を保存
+let continuousMode = false; // 連続モード
+let continuousFormat = null; // 連続適用用の書式
 
 // 多言語対応テキスト
 const texts = {
@@ -26,8 +26,8 @@ const texts = {
         noSavedFormatsText: '保存された書式はありません',
         keyGuideTitle: 'キーガイド',
         keyGuideText: '保存された書式にマウスオーバーしてキーを押すと書式を適用します',
-                fontLabel: 'フォント',
-                continuousLabel: '連続',
+        fontLabel: 'フォント',
+        continuousLabel: '連続',
         formatSaved: '書式を保存しました',
         formatApplied: '書式を適用しました',
         formatNotFound: '保存された書式が見つかりません',
@@ -56,8 +56,8 @@ const texts = {
         noSavedFormatsText: 'No saved formats',
         keyGuideTitle: 'Key Guide',
         keyGuideText: 'Mouse over a saved format and press a key to apply it',
-                fontLabel: 'Font',
-                continuousLabel: 'Continuous',
+        fontLabel: 'Font',
+        continuousLabel: 'Continuous',
         formatSaved: 'Format saved',
         formatApplied: 'Format applied',
         formatNotFound: 'Saved format not found',
@@ -149,7 +149,7 @@ function initializeApp() {
         const continuousControl = document.getElementById('continuous-control');
         const langJa = document.getElementById('lang-ja');
         const langEn = document.getElementById('lang-en');
-
+        
         console.log('Save area found:', !!saveArea);
         console.log('Font control found:', !!fontControl);
         console.log('Continuous control found:', !!continuousControl);
@@ -189,9 +189,9 @@ function initializeApp() {
         updateSavedFormatsList();
         
         console.log('Step 10: Initialize display values');
-                // 初期表示値を設定
-                updateFontSizeDisplay();
-                updateContinuousDisplay();
+        // 初期表示値を設定
+        updateFontSizeDisplay();
+        updateContinuousDisplay();
         
         console.log('✅ App initialization completed successfully');
         console.log('=== Initialization Summary ===');
@@ -227,11 +227,11 @@ function setupEventListeners() {
             console.error('❌ English language button not found');
         }
     
-                // コントロール領域のイベント
-                const saveArea = document.getElementById('save-area');
-                const fontControl = document.getElementById('font-control');
-                const continuousControl = document.getElementById('continuous-control');
-                const widthToggle = document.getElementById('width-toggle');
+        // コントロール領域のイベント
+        const saveArea = document.getElementById('save-area');
+        const fontControl = document.getElementById('font-control');
+        const continuousControl = document.getElementById('continuous-control');
+        const widthToggle = document.getElementById('width-toggle');
         
         if (saveArea) {
             console.log('✅ Save area found');
@@ -291,6 +291,7 @@ function setupEventListeners() {
                 selectArea('continuous');
                 setTimeout(() => {
                     continuousControl.focus();
+                    continuousControl.click();
                 }, 10);
             });
             
@@ -300,7 +301,6 @@ function setupEventListeners() {
             });
             
             continuousControl.addEventListener('keydown', handleKeyPress);
-            
             console.log('✅ Continuous control events added');
         } else {
             console.error('❌ Continuous control not found');
@@ -430,8 +430,8 @@ function updateUI() {
         'no-saved-formats-text': t.noSavedFormatsText,
         'key-guide-title': t.keyGuideTitle,
         'key-guide-text': t.keyGuideText,
-                'font-label': t.fontLabel,
-                'continuous-label': t.continuousLabel,
+        'font-label': t.fontLabel,
+        'continuous-label': t.continuousLabel,
         'width-toggle': t.widthToggle,
         'saved-formats-instruction': t.savedFormatsInstruction,
         'lang-ja': t.japanese,
@@ -576,13 +576,13 @@ function handleKeyPress(event) {
     
     console.log(`Key pressed: ${key} in ${targetId}`);
     
-            if (targetId === 'save-area') {
-                saveFormat(key);
-            } else if (targetId === 'font-control') {
-                adjustFontSize(key);
-            } else if (targetId === 'continuous-control') {
-                saveContinuousFormat(key);
-            }
+    if (targetId === 'save-area') {
+        saveFormat(key);
+    } else if (targetId === 'font-control') {
+        adjustFontSize(key);
+    } else if (targetId === 'continuous-control') {
+        saveContinuousFormat(key);
+    }
     
     // 視覚的フィードバック
     if (event.currentTarget && event.currentTarget.classList) {
@@ -769,65 +769,20 @@ function saveFormat(key) {
             }
         }
 
-        // 選択変更時の処理
-        function onSelectionChanged() {
-            console.log('Selection changed');
-            try {
-                updateCurrentFormat();
-                
-                // 連続モードが有効で、書式が保存されている場合
-                if (continuousMode && continuousFormat) {
-                    applyContinuousFormat();
-                }
-            } catch (error) {
-                console.error('Selection change error:', error);
-            }
+// 選択変更時の処理
+function onSelectionChanged() {
+    console.log('Selection changed');
+    try {
+        updateCurrentFormat();
+        
+        // 連続モードが有効で、書式が保存されている場合
+        if (continuousMode && continuousFormat) {
+            applyContinuousFormat();
         }
-
-        // 連続書式を適用
-        function applyContinuousFormat() {
-            if (!continuousFormat) return;
-
-            Word.run(async (context) => {
-                try {
-                    const selection = context.document.getSelection();
-                    selection.load('text');
-                    await context.sync();
-
-                    // テキストが選択されている場合のみ適用
-                    if (selection.text && selection.text.trim() !== '') {
-                        console.log('🎨 Applying continuous format to:', selection.text);
-                        
-                        const font = selection.font;
-                        const paragraph = selection.paragraphs.getFirst();
-
-                        // フォント書式を適用
-                        if (continuousFormat.font.name) font.name = continuousFormat.font.name;
-                        if (continuousFormat.font.size) font.size = continuousFormat.font.size;
-                        if (continuousFormat.font.bold !== undefined) font.bold = continuousFormat.font.bold;
-                        if (continuousFormat.font.italic !== undefined) font.italic = continuousFormat.font.italic;
-                        if (continuousFormat.font.color) font.color = continuousFormat.font.color;
-                        if (continuousFormat.font.underline !== undefined) font.underline = continuousFormat.font.underline;
-                        if (continuousFormat.font.highlightColor) font.highlightColor = continuousFormat.font.highlightColor;
-
-                        // 段落書式を適用
-                        if (continuousFormat.paragraph.alignment) paragraph.alignment = continuousFormat.paragraph.alignment;
-                        if (continuousFormat.paragraph.leftIndent !== undefined) paragraph.leftIndent = continuousFormat.paragraph.leftIndent;
-                        if (continuousFormat.paragraph.rightIndent !== undefined) paragraph.rightIndent = continuousFormat.paragraph.rightIndent;
-                        if (continuousFormat.paragraph.lineSpacing !== undefined) paragraph.lineSpacing = continuousFormat.paragraph.lineSpacing;
-                        if (continuousFormat.paragraph.spaceAfter !== undefined) paragraph.spaceAfter = continuousFormat.paragraph.spaceAfter;
-                        if (continuousFormat.paragraph.spaceBefore !== undefined) paragraph.spaceBefore = continuousFormat.paragraph.spaceBefore;
-
-                        await context.sync();
-                        console.log('✅ Continuous format applied successfully');
-                    }
-                } catch (error) {
-                    console.error('連続書式適用エラー:', error);
-                }
-            }).catch(error => {
-                console.error('Word.run エラー:', error);
-            });
-        }
+    } catch (error) {
+        console.error('Selection change error:', error);
+    }
+}
 
 // 現在の書式を更新
 function updateCurrentFormat() {
@@ -1230,37 +1185,82 @@ function updateFontSizeDisplay() {
     }
 }
 
-        // 連続モード表示更新
-        function updateContinuousDisplay() {
-            const display = document.getElementById('continuous-display');
-            if (display) {
-                const t = texts[currentLanguage];
-                display.textContent = continuousMode ? t.continuousModeOn : t.continuousModeOff;
-            }
-        }
+// 連続モード表示更新
+function updateContinuousDisplay() {
+    const display = document.getElementById('continuous-display');
+    if (display) {
+        const t = texts[currentLanguage];
+        display.textContent = continuousMode ? t.continuousModeOn : t.continuousModeOff;
+    }
+}
 
-        // 連続適用用の書式を保存
-        function saveContinuousFormat(key) {
-            if (!currentFormat) {
-                showMessage(texts[currentLanguage].noTextSelected, 'error');
-                return;
-            }
+// 連続適用用の書式を保存
+function saveContinuousFormat(key) {
+    if (!currentFormat) {
+        showMessage(texts[currentLanguage].noTextSelected, 'error');
+        return;
+    }
 
-            try {
-                continuousFormat = {
-                    ...currentFormat,
-                    timestamp: new Date().toISOString()
-                };
+    try {
+        continuousFormat = {
+            ...currentFormat,
+            timestamp: new Date().toISOString()
+        };
 
-                const t = texts[currentLanguage];
-                showMessage(t.continuousFormatSaved, 'success');
+        const t = texts[currentLanguage];
+        showMessage(t.continuousFormatSaved, 'success');
+        
+        console.log('💾 Continuous format saved:', continuousFormat);
+    } catch (error) {
+        console.error('連続書式保存エラー:', error);
+        showMessage('連続書式の保存に失敗しました', 'error');
+    }
+}
+
+// 連続書式を適用
+function applyContinuousFormat() {
+    if (!continuousFormat) return;
+
+    Word.run(async (context) => {
+        try {
+            const selection = context.document.getSelection();
+            selection.load('text');
+            await context.sync();
+
+            // テキストが選択されている場合のみ適用
+            if (selection.text && selection.text.trim() !== '') {
+                console.log('🎨 Applying continuous format to:', selection.text);
                 
-                console.log('💾 Continuous format saved:', continuousFormat);
-            } catch (error) {
-                console.error('連続書式保存エラー:', error);
-                showMessage('連続書式の保存に失敗しました', 'error');
+                const font = selection.font;
+                const paragraph = selection.paragraphs.getFirst();
+
+                // フォント書式を適用
+                if (continuousFormat.font.name) font.name = continuousFormat.font.name;
+                if (continuousFormat.font.size) font.size = continuousFormat.font.size;
+                if (continuousFormat.font.bold !== undefined) font.bold = continuousFormat.font.bold;
+                if (continuousFormat.font.italic !== undefined) font.italic = continuousFormat.font.italic;
+                if (continuousFormat.font.color) font.color = continuousFormat.font.color;
+                if (continuousFormat.font.underline !== undefined) font.underline = continuousFormat.font.underline;
+                if (continuousFormat.font.highlightColor) font.highlightColor = continuousFormat.font.highlightColor;
+
+                // 段落書式を適用
+                if (continuousFormat.paragraph.alignment) paragraph.alignment = continuousFormat.paragraph.alignment;
+                if (continuousFormat.paragraph.leftIndent !== undefined) paragraph.leftIndent = continuousFormat.paragraph.leftIndent;
+                if (continuousFormat.paragraph.rightIndent !== undefined) paragraph.rightIndent = continuousFormat.paragraph.rightIndent;
+                if (continuousFormat.paragraph.lineSpacing !== undefined) paragraph.lineSpacing = continuousFormat.paragraph.lineSpacing;
+                if (continuousFormat.paragraph.spaceAfter !== undefined) paragraph.spaceAfter = continuousFormat.paragraph.spaceAfter;
+                if (continuousFormat.paragraph.spaceBefore !== undefined) paragraph.spaceBefore = continuousFormat.paragraph.spaceBefore;
+
+                await context.sync();
+                console.log('✅ Continuous format applied successfully');
             }
+        } catch (error) {
+            console.error('連続書式適用エラー:', error);
         }
+    }).catch(error => {
+        console.error('Word.run エラー:', error);
+    });
+}
 
         // 現在の書式を適用
         function applyCurrentFormat() {
