@@ -225,6 +225,7 @@ function setupEventListeners() {
             console.log('✅ Save area found');
             // マウスイベント
             saveArea.addEventListener('mouseenter', async (e) => {
+                console.log('🖱️ Save area mouseenter');
                 e.preventDefault();
                 await saveCursorPosition(); // カーソル位置を保存
                 selectArea('save');
@@ -236,6 +237,7 @@ function setupEventListeners() {
             });
             
             saveArea.addEventListener('mouseleave', async (e) => {
+                console.log('🖱️ Save area mouseleave');
                 await restoreCursorPosition(); // カーソル位置を復元
             });
             
@@ -247,6 +249,7 @@ function setupEventListeners() {
         if (fontControl) {
             console.log('✅ Font control found');
             fontControl.addEventListener('mouseenter', async (e) => {
+                console.log('🖱️ Font control mouseenter');
                 e.preventDefault();
                 await saveCursorPosition(); // カーソル位置を保存
                 selectArea('font');
@@ -257,6 +260,7 @@ function setupEventListeners() {
             });
             
             fontControl.addEventListener('mouseleave', async (e) => {
+                console.log('🖱️ Font control mouseleave');
                 await restoreCursorPosition(); // カーソル位置を復元
             });
             
@@ -269,6 +273,7 @@ function setupEventListeners() {
         if (lineSpacingControl) {
             console.log('✅ Line spacing control found');
             lineSpacingControl.addEventListener('mouseenter', async (e) => {
+                console.log('🖱️ Line spacing control mouseenter');
                 e.preventDefault();
                 await saveCursorPosition(); // カーソル位置を保存
                 selectArea('lineSpacing');
@@ -279,6 +284,7 @@ function setupEventListeners() {
             });
             
             lineSpacingControl.addEventListener('mouseleave', async (e) => {
+                console.log('🖱️ Line spacing control mouseleave');
                 await restoreCursorPosition(); // カーソル位置を復元
             });
             
@@ -432,12 +438,24 @@ function updateUI() {
 // カーソル位置を保存
 async function saveCursorPosition() {
     try {
-        if (typeof Word === 'undefined') return;
+        if (typeof Word === 'undefined') {
+            console.log('❌ Word API not available for cursor position save');
+            return;
+        }
+        
+        console.log('💾 Starting cursor position save...');
         
         await Word.run(async (context) => {
             const selection = context.document.getSelection();
-            selection.load('text');
+            selection.load('text, start, end');
             await context.sync();
+            
+            console.log('📝 Selection info:', {
+                text: selection.text,
+                start: selection.start,
+                end: selection.end,
+                textLength: selection.text ? selection.text.length : 0
+            });
             
             if (selection.text && selection.text.trim() !== '') {
                 // テキストが選択されている場合は選択範囲を保存
@@ -445,44 +463,63 @@ async function saveCursorPosition() {
                     type: 'selection',
                     text: selection.text,
                     start: selection.start,
-                    end: selection.end
+                    end: selection.end,
+                    timestamp: new Date().toISOString()
                 };
+                console.log('✅ Selection range saved:', savedCursorPosition);
             } else {
                 // カーソル位置のみの場合は位置を保存
                 savedCursorPosition = {
                     type: 'cursor',
-                    position: selection.start
+                    position: selection.start,
+                    timestamp: new Date().toISOString()
                 };
+                console.log('✅ Cursor position saved:', savedCursorPosition);
             }
-            
-            console.log('Cursor position saved:', savedCursorPosition);
         });
     } catch (error) {
-        console.error('Failed to save cursor position:', error);
+        console.error('❌ Failed to save cursor position:', error);
+        savedCursorPosition = null;
     }
 }
 
 // カーソル位置を復元
 async function restoreCursorPosition() {
     try {
-        if (!savedCursorPosition || typeof Word === 'undefined') return;
+        if (!savedCursorPosition) {
+            console.log('❌ No saved cursor position to restore');
+            return;
+        }
+        
+        if (typeof Word === 'undefined') {
+            console.log('❌ Word API not available for cursor position restore');
+            return;
+        }
+        
+        console.log('🔄 Starting cursor position restore...', savedCursorPosition);
         
         await Word.run(async (context) => {
             const selection = context.document.getSelection();
             
             if (savedCursorPosition.type === 'selection') {
                 // 選択範囲を復元
+                console.log('📝 Restoring selection range:', {
+                    start: savedCursorPosition.start,
+                    end: savedCursorPosition.end,
+                    text: savedCursorPosition.text
+                });
                 selection.select(savedCursorPosition.start, savedCursorPosition.end);
             } else if (savedCursorPosition.type === 'cursor') {
                 // カーソル位置を復元
+                console.log('📍 Restoring cursor position:', savedCursorPosition.position);
                 selection.select(savedCursorPosition.position, savedCursorPosition.position);
             }
             
             await context.sync();
-            console.log('Cursor position restored:', savedCursorPosition);
+            console.log('✅ Cursor position restored successfully');
         });
     } catch (error) {
-        console.error('Failed to restore cursor position:', error);
+        console.error('❌ Failed to restore cursor position:', error);
     }
 }
 
@@ -533,10 +570,14 @@ function handleKeyPress(event) {
     }
     
     // 視覚的フィードバック
-    event.currentTarget.classList.add('pulse');
-    setTimeout(() => {
-        event.currentTarget.classList.remove('pulse');
-    }, 300);
+    if (event.currentTarget && event.currentTarget.classList) {
+        event.currentTarget.classList.add('pulse');
+        setTimeout(() => {
+            if (event.currentTarget && event.currentTarget.classList) {
+                event.currentTarget.classList.remove('pulse');
+            }
+        }, 300);
+    }
 }
 
 // 書式の保存
@@ -818,12 +859,14 @@ function updateSavedFormatsList() {
     const formatItems = savedFormatsList.querySelectorAll('.format-item');
     formatItems.forEach(item => {
         item.addEventListener('mouseenter', async (e) => {
+            console.log('🖱️ Format item mouseenter');
             e.preventDefault();
             await saveCursorPosition(); // カーソル位置を保存
             item.focus();
         });
         
         item.addEventListener('mouseleave', async (e) => {
+            console.log('🖱️ Format item mouseleave');
             await restoreCursorPosition(); // カーソル位置を復元
         });
         
