@@ -3,7 +3,20 @@
 // グローバル変数
 let currentFormat = null;
 let savedFormats = {};
-let currentLanguage = 'ja';
+let currentLanguage = 'ja'; // デフォルトは日本語
+
+// ブラウザの言語を検出
+function detectLanguage() {
+    const browserLang = navigator.language || navigator.userLanguage;
+    if (browserLang.startsWith('ja')) {
+        return 'ja';
+    } else {
+        return 'en';
+    }
+}
+
+// 初期化時に言語を設定
+currentLanguage = detectLanguage();
 let currentFontSize = 12;
 let currentLineSpacing = 1.0;
 let isWideMode = true;
@@ -154,15 +167,11 @@ function initializeApp() {
         const loadArea = document.getElementById('load-area');
         const fontControl = document.getElementById('font-control');
         const continuousControl = document.getElementById('continuous-control');
-        const langJa = document.getElementById('lang-ja');
-        const langEn = document.getElementById('lang-en');
         
         console.log('Save area found:', !!saveArea);
         console.log('Load area found:', !!loadArea);
         console.log('Font control found:', !!fontControl);
         console.log('Continuous control found:', !!continuousControl);
-        console.log('Japanese button found:', !!langJa);
-        console.log('English button found:', !!langEn);
         
         if (!saveArea || !loadArea || !fontControl || !continuousControl) {
             console.error('❌ Critical elements missing - retrying in 500ms');
@@ -218,22 +227,6 @@ function setupEventListeners() {
     
     try {
         // 言語切り替え
-        const langJa = document.getElementById('lang-ja');
-        const langEn = document.getElementById('lang-en');
-        
-        if (langJa) {
-            langJa.addEventListener('click', () => setLanguage('ja'));
-            console.log('✅ Japanese language button event added');
-        } else {
-            console.error('❌ Japanese language button not found');
-        }
-        
-        if (langEn) {
-            langEn.addEventListener('click', () => setLanguage('en'));
-            console.log('✅ English language button event added');
-        } else {
-            console.error('❌ English language button not found');
-        }
     
         // コントロール領域のイベント
         const saveArea = document.getElementById('save-area');
@@ -341,13 +334,6 @@ function setupEventListeners() {
             console.error('❌ Continuous control not found');
         }
         
-        if (widthToggle) {
-            console.log('✅ Width toggle found');
-            widthToggle.addEventListener('click', toggleWidth);
-            console.log('✅ Width toggle event added');
-        } else {
-            console.error('❌ Width toggle not found');
-        }
     
         // フォーカスイベント
         if (saveArea) {
@@ -491,10 +477,7 @@ function updateUI() {
         'font-label': t.fontLabel,
         'continuous-label': t.continuousLabel,
         'load-label': t.loadLabel,
-        'load-instruction': t.loadInstruction,
-        'width-toggle': t.widthToggle,
-        'lang-ja': t.japanese,
-        'lang-en': t.english
+        'load-instruction': t.loadInstruction
     };
     
     for (const [id, text] of Object.entries(elements)) {
@@ -1375,22 +1358,6 @@ function handleLineSpacingWheel(event) {
     applyCurrentFormat();
 }
 
-// 幅切り替え
-function toggleWidth() {
-    isWideMode = !isWideMode;
-    const app = document.getElementById('app');
-    const button = document.getElementById('width-toggle');
-    
-    if (isWideMode) {
-        app.classList.remove('narrow');
-        app.classList.add('wide');
-        button.textContent = '幅: 300px';
-    } else {
-        app.classList.remove('wide');
-        app.classList.add('narrow');
-        button.textContent = '幅: 100px';
-    }
-}
 
 // グローバル関数として公開
 window.removeFormat = removeFormat;

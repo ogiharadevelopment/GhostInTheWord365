@@ -25,13 +25,11 @@ html, body {
 
 /* ヘッダー */
 #header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
     padding: 15px 20px;
     border-bottom: 1px solid #edebe9;
     background-color: #faf9f8;
     flex-shrink: 0;
+    text-align: center;
 }
 
 #app-title {
@@ -39,32 +37,6 @@ html, body {
     font-weight: 600;
     color: #323130;
     margin: 0;
-}
-
-#language-selector {
-    display: flex;
-    gap: 5px;
-}
-
-.lang-btn {
-    padding: 4px 8px;
-    border: 1px solid #8a8886;
-    background-color: #ffffff;
-    color: #323130;
-    font-size: 12px;
-    cursor: pointer;
-    border-radius: 2px;
-    transition: all 0.2s ease;
-}
-
-.lang-btn:hover {
-    background-color: #f3f2f1;
-}
-
-.lang-btn.active {
-    background-color: #0078d4;
-    color: #ffffff;
-    border-color: #0078d4;
 }
 
 /* メインコンテンツ */
@@ -115,13 +87,17 @@ h2 {
     line-height: 1.5;
 }
 
-/* コントロール行 */
-#control-row {
-    display: flex;
+/* コントロールグリッド */
+#control-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
     gap: 10px;
     margin: 20px 0;
-    align-items: center;
-    justify-content: flex-start;
+}
+
+.control-row {
+    display: contents;
 }
 
 .control-area {
@@ -297,20 +273,6 @@ h2 {
     background-color: #f8f8f8;
 }
 
-/* キーガイド */
-#key-guide-content {
-    background-color: #f8f8f8;
-    border: 1px solid #edebe9;
-    border-radius: 4px;
-    padding: 12px;
-}
-
-#key-guide-content p {
-    margin: 0;
-    font-size: 13px;
-    color: #605e5c;
-    line-height: 1.4;
-}
 
 /* ステータス表示 */
 .status-message {
@@ -365,58 +327,11 @@ h2 {
     animation: pulse 0.3s ease;
 }
 
-/* 幅切り替えボタン */
-#width-toggle-section {
-    margin-top: 20px;
-    text-align: center;
-}
-
-.width-toggle-btn {
-    padding: 8px 16px;
-    border: 1px solid #8a8886;
-    background-color: #ffffff;
-    color: #323130;
-    font-size: 12px;
-    cursor: pointer;
-    border-radius: 4px;
-    transition: all 0.2s ease;
-}
-
-.width-toggle-btn:hover {
-    background-color: #f3f2f1;
-}
-
-/* 幅切り替え */
-#app.narrow {
-    width: 100px;
-}
-
-#app.wide {
+/* 幅固定 */
+#app {
     width: 300px;
 }
 
-/* レスポンシブ対応 */
-@media (max-width: 400px) {
-    #control-row {
-        flex-direction: column;
-        align-items: center;
-        gap: 15px;
-    }
-    
-    .control-area,
-    .action-area {
-        width: 60px;
-        height: 60px;
-    }
-    
-    .area-label {
-        font-size: 12px;
-    }
-    
-    .area-instruction {
-        font-size: 8px;
-    }
-}
 
 /* スクロールバーのスタイリング */
 ::-webkit-scrollbar {
