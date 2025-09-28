@@ -17,6 +17,26 @@ function detectLanguage() {
 
 // 初期化時に言語を設定
 currentLanguage = detectLanguage();
+
+// 言語切り替え関数
+function setLanguage(lang) {
+    currentLanguage = lang;
+    updateUI();
+    
+    // アクティブ状態を更新
+    const langJa = document.getElementById('lang-ja');
+    const langEn = document.getElementById('lang-en');
+    
+    if (lang === 'ja') {
+        if (langJa) langJa.classList.add('active');
+        if (langEn) langEn.classList.remove('active');
+    } else {
+        if (langJa) langJa.classList.remove('active');
+        if (langEn) langEn.classList.add('active');
+    }
+    
+    console.log('Language switched to:', lang);
+}
 let currentFontSize = 12;
 let currentLineSpacing = 1.0;
 let isWideMode = true;
@@ -167,11 +187,15 @@ function initializeApp() {
         const loadArea = document.getElementById('load-area');
         const fontControl = document.getElementById('font-control');
         const continuousControl = document.getElementById('continuous-control');
+        const langJa = document.getElementById('lang-ja');
+        const langEn = document.getElementById('lang-en');
         
         console.log('Save area found:', !!saveArea);
         console.log('Load area found:', !!loadArea);
         console.log('Font control found:', !!fontControl);
         console.log('Continuous control found:', !!continuousControl);
+        console.log('Japanese button found:', !!langJa);
+        console.log('English button found:', !!langEn);
         
         if (!saveArea || !loadArea || !fontControl || !continuousControl) {
             console.error('❌ Critical elements missing - retrying in 500ms');
@@ -226,7 +250,23 @@ function setupEventListeners() {
     console.log('=== setupEventListeners called ===');
     
     try {
-        // 言語切り替え
+        // 言語切り替えボタンのイベント
+        const langJa = document.getElementById('lang-ja');
+        const langEn = document.getElementById('lang-en');
+        
+        if (langJa) {
+            langJa.addEventListener('click', () => setLanguage('ja'));
+            console.log('✅ Japanese language button event added');
+        } else {
+            console.error('❌ Japanese language button not found');
+        }
+        
+        if (langEn) {
+            langEn.addEventListener('click', () => setLanguage('en'));
+            console.log('✅ English language button event added');
+        } else {
+            console.error('❌ English language button not found');
+        }
     
         // コントロール領域のイベント
         const saveArea = document.getElementById('save-area');
@@ -477,7 +517,9 @@ function updateUI() {
         'font-label': t.fontLabel,
         'continuous-label': t.continuousLabel,
         'load-label': t.loadLabel,
-        'load-instruction': t.loadInstruction
+        'load-instruction': t.loadInstruction,
+        'lang-ja': t.japanese,
+        'lang-en': t.english
     };
     
     for (const [id, text] of Object.entries(elements)) {
@@ -1209,10 +1251,14 @@ function updateContinuousDisplay() {
     const display = document.getElementById('continuous-display');
     if (display) {
         const t = texts[currentLanguage];
-        if (continuousMode && continuousFormat) {
-            // 保持している書式のキーを表示（最初の5文字）
-            const formatKey = continuousFormat.key || 'FORMAT';
-            display.textContent = formatKey.substring(0, 5);
+        if (continuousMode) {
+            if (continuousFormat && continuousFormat.key) {
+                // キーが指定されている場合
+                display.textContent = `ON (${continuousFormat.key})`;
+            } else {
+                // キーが指定されていない場合
+                display.textContent = 'ON (指定なし)';
+            }
         } else {
             display.textContent = t.continuousModeOff;
         }

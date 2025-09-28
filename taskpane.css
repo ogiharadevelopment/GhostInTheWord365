@@ -25,18 +25,46 @@ html, body {
 
 /* ヘッダー */
 #header {
-    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 20px;
     border-bottom: 1px solid #edebe9;
     background-color: #faf9f8;
     flex-shrink: 0;
-    text-align: center;
 }
 
 #app-title {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 600;
     color: #323130;
     margin: 0;
+}
+
+#language-selector {
+    display: flex;
+    gap: 5px;
+}
+
+.lang-btn {
+    padding: 3px 6px;
+    border: 1px solid #8a8886;
+    background-color: #ffffff;
+    color: #323130;
+    font-size: 11px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s ease;
+}
+
+.lang-btn:hover {
+    background-color: #f3f2f1;
+}
+
+.lang-btn.active {
+    background-color: #0078d4;
+    color: #ffffff;
+    border-color: #0078d4;
 }
 
 /* メインコンテンツ */
@@ -101,7 +129,7 @@ h2 {
 }
 
 .control-area {
-    width: 60px;
+    width: 120px;
     height: 60px;
     border: 2px solid #8a8886;
     border-radius: 8px;
@@ -145,7 +173,7 @@ h2 {
 }
 
 .action-area {
-    width: 60px;
+    width: 120px;
     height: 60px;
     border: 2px solid #8a8886;
     border-radius: 8px;
