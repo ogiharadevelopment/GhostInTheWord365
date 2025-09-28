@@ -35,6 +35,10 @@ function setLanguage(lang) {
         if (langEn) langEn.classList.add('active');
     }
     
+    // 現在の書式表示と保存された書式一覧を更新
+    displayCurrentFormat(currentFormat);
+    updateSavedFormatsList();
+    
     console.log('Language switched to:', lang);
 }
 let currentFontSize = 12;
@@ -950,7 +954,12 @@ function updateCurrentFormat() {
             if (!selection.text || selection.text.trim() === '') {
                 console.log('No text selected');
                 currentFormat = null;
-                displayCurrentFormat(null);
+                // 言語切り替え時に確実に更新されるように、直接表示を更新
+                const formatDisplay = document.getElementById('current-format-display');
+                if (formatDisplay) {
+                    const t = texts[currentLanguage];
+                    formatDisplay.innerHTML = `<p>${t.noSelectionText}</p>`;
+                }
                 return;
             }
             
@@ -1043,12 +1052,22 @@ function updateCurrentFormat() {
                 name: error.name
             });
             currentFormat = null;
-            displayCurrentFormat(null);
+            // 言語切り替え時に確実に更新されるように、直接表示を更新
+            const formatDisplay = document.getElementById('current-format-display');
+            if (formatDisplay) {
+                const t = texts[currentLanguage];
+                formatDisplay.innerHTML = `<p>${t.noSelectionText}</p>`;
+            }
         }
     }).catch(error => {
         console.error('Word.run エラー:', error);
         currentFormat = null;
-        displayCurrentFormat(null);
+        // 言語切り替え時に確実に更新されるように、直接表示を更新
+        const formatDisplay = document.getElementById('current-format-display');
+        if (formatDisplay) {
+            const t = texts[currentLanguage];
+            formatDisplay.innerHTML = `<p>${t.noSelectionText}</p>`;
+        }
     });
 }
 
@@ -1057,7 +1076,8 @@ function displayCurrentFormat(format) {
     const formatDisplay = document.getElementById('current-format-display');
     
     if (!format) {
-        formatDisplay.innerHTML = `<p>${texts[currentLanguage].noSelectionText}</p>`;
+        const t = texts[currentLanguage];
+        formatDisplay.innerHTML = `<p>${t.noSelectionText}</p>`;
         return;
     }
     
@@ -1201,7 +1221,8 @@ function updateSavedFormatsList() {
     const savedFormatsList = document.getElementById('saved-formats-list');
     
     if (Object.keys(savedFormats).length === 0) {
-        savedFormatsList.innerHTML = `<p>${texts[currentLanguage].noSavedFormatsText}</p>`;
+        const t = texts[currentLanguage];
+        savedFormatsList.innerHTML = `<p>${t.noSavedFormatsText}</p>`;
         return;
     }
     
