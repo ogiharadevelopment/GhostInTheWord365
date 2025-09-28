@@ -4,11 +4,13 @@
 let currentFormat = null;
 let savedFormats = {};
 let currentLanguage = 'ja';
-let currentFontSize = 12;
-let currentLineSpacing = 1.0;
-let isWideMode = true;
-let selectedArea = null;
-let savedCursorPosition = null; // カーソル位置を保存
+        let currentFontSize = 12;
+        let currentLineSpacing = 1.0;
+        let isWideMode = true;
+        let selectedArea = null;
+        let savedCursorPosition = null; // カーソル位置を保存
+        let continuousMode = false; // 連続モード
+        let continuousFormat = null; // 連続適用用の書式
 
 // 多言語対応テキスト
 const texts = {
@@ -24,8 +26,8 @@ const texts = {
         noSavedFormatsText: '保存された書式はありません',
         keyGuideTitle: 'キーガイド',
         keyGuideText: '保存された書式にマウスオーバーしてキーを押すと書式を適用します',
-        fontLabel: 'フォント',
-        lineSpacingLabel: '行間',
+                fontLabel: 'フォント',
+                continuousLabel: '連続',
         formatSaved: '書式を保存しました',
         formatApplied: '書式を適用しました',
         formatNotFound: '保存された書式が見つかりません',
@@ -34,6 +36,11 @@ const texts = {
         widthToggleNarrow: '幅: 100px',
         deleteConfirm: (key) => `書式 "${key}" を削除しますか？`,
         savedFormatsInstruction: 'マウスオーバーしてキーを押すと適用',
+        continuousModeOn: 'ON',
+        continuousModeOff: 'OFF',
+        continuousModeEnabled: '連続モード有効',
+        continuousModeDisabled: '連続モード無効',
+        continuousFormatSaved: '連続適用用書式を保存しました',
         japanese: '日本語',
         english: 'English'
     },
@@ -49,8 +56,8 @@ const texts = {
         noSavedFormatsText: 'No saved formats',
         keyGuideTitle: 'Key Guide',
         keyGuideText: 'Mouse over a saved format and press a key to apply it',
-        fontLabel: 'Font',
-        lineSpacingLabel: 'Line Spacing',
+                fontLabel: 'Font',
+                continuousLabel: 'Continuous',
         formatSaved: 'Format saved',
         formatApplied: 'Format applied',
         formatNotFound: 'Saved format not found',
@@ -59,6 +66,11 @@ const texts = {
         widthToggleNarrow: 'Width: 100px',
         deleteConfirm: (key) => `Delete format "${key}"?`,
         savedFormatsInstruction: 'Mouse over and press key to apply',
+        continuousModeOn: 'ON',
+        continuousModeOff: 'OFF',
+        continuousModeEnabled: 'Continuous mode enabled',
+        continuousModeDisabled: 'Continuous mode disabled',
+        continuousFormatSaved: 'Continuous format saved',
         japanese: '日本語',
         english: 'English'
     }
@@ -177,9 +189,9 @@ function initializeApp() {
         updateSavedFormatsList();
         
         console.log('Step 10: Initialize display values');
-        // 初期表示値を設定
-        updateFontSizeDisplay();
-        updateLineSpacingDisplay();
+                // 初期表示値を設定
+                updateFontSizeDisplay();
+                updateContinuousDisplay();
         
         console.log('✅ App initialization completed successfully');
         console.log('=== Initialization Summary ===');
@@ -215,11 +227,11 @@ function setupEventListeners() {
             console.error('❌ English language button not found');
         }
     
-        // コントロール領域のイベント
-        const saveArea = document.getElementById('save-area');
-        const fontControl = document.getElementById('font-control');
-        const lineSpacingControl = document.getElementById('line-spacing-control');
-        const widthToggle = document.getElementById('width-toggle');
+                // コントロール領域のイベント
+                const saveArea = document.getElementById('save-area');
+                const fontControl = document.getElementById('font-control');
+                const continuousControl = document.getElementById('continuous-control');
+                const widthToggle = document.getElementById('width-toggle');
         
         if (saveArea) {
             console.log('✅ Save area found');
@@ -270,28 +282,33 @@ function setupEventListeners() {
             console.error('❌ Font control not found');
         }
         
-        if (lineSpacingControl) {
-            console.log('✅ Line spacing control found');
-            lineSpacingControl.addEventListener('mouseenter', async (e) => {
-                console.log('🖱️ Line spacing control mouseenter');
+        if (continuousControl) {
+            console.log('✅ Continuous control found');
+            continuousControl.addEventListener('mouseenter', async (e) => {
+                console.log('🖱️ Continuous control mouseenter');
                 e.preventDefault();
                 await saveCursorPosition(); // カーソル位置を保存
-                selectArea('lineSpacing');
+                selectArea('continuous');
                 setTimeout(() => {
-                    lineSpacingControl.focus();
-                    lineSpacingControl.click();
+                    continuousControl.focus();
+                    continuousControl.click();
                 }, 10);
             });
             
-            lineSpacingControl.addEventListener('mouseleave', async (e) => {
-                console.log('🖱️ Line spacing control mouseleave');
+            continuousControl.addEventListener('mouseleave', async (e) => {
+                console.log('🖱️ Continuous control mouseleave');
                 await restoreCursorPosition(); // カーソル位置を復元
             });
             
-            lineSpacingControl.addEventListener('wheel', handleLineSpacingWheel);
-            console.log('✅ Line spacing control events added');
+            continuousControl.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleContinuousMode();
+            });
+            
+            console.log('✅ Continuous control events added');
         } else {
-            console.error('❌ Line spacing control not found');
+            console.error('❌ Continuous control not found');
         }
         
         if (widthToggle) {
@@ -417,8 +434,8 @@ function updateUI() {
         'no-saved-formats-text': t.noSavedFormatsText,
         'key-guide-title': t.keyGuideTitle,
         'key-guide-text': t.keyGuideText,
-        'font-label': t.fontLabel,
-        'line-spacing-label': t.lineSpacingLabel,
+                'font-label': t.fontLabel,
+                'continuous-label': t.continuousLabel,
         'width-toggle': t.widthToggle,
         'saved-formats-instruction': t.savedFormatsInstruction,
         'lang-ja': t.japanese,
@@ -435,163 +452,95 @@ function updateUI() {
     }
 }
 
-// カーソル位置を保存
-async function saveCursorPosition() {
-    try {
-        if (typeof Word === 'undefined') {
-            console.log('❌ Word API not available for cursor position save');
-            return;
-        }
-        
-        console.log('💾 Starting cursor position save...');
-        
-        await Word.run(async (context) => {
-            const selection = context.document.getSelection();
-            
-            // 基本的な情報を取得
-            selection.load('text, isEmpty');
-            await context.sync();
-            
-            console.log('📝 Selection info:', {
-                text: selection.text,
-                isEmpty: selection.isEmpty,
-                textLength: selection.text ? selection.text.length : 0
-            });
-            
-            // 位置情報の取得を簡素化
-            let positionInfo = null;
-            
+        // カーソル位置を保存（簡素化版）
+        async function saveCursorPosition() {
             try {
-                // 方法1: 選択範囲から取得
-                const range = selection.getRange();
-                range.load('start, end');
-                await context.sync();
+                if (typeof Word === 'undefined') {
+                    console.log('❌ Word API not available for cursor position save');
+                    return;
+                }
                 
-                console.log('📍 Range info:', {
-                    start: range.start,
-                    end: range.end,
-                    startType: typeof range.start,
-                    endType: typeof range.end,
-                    startValue: range.start ? range.start.toString() : 'null/undefined',
-                    endValue: range.end ? range.end.toString() : 'null/undefined',
-                    startIsNumber: typeof range.start === 'number',
-                    endIsNumber: typeof range.end === 'number'
-                });
+                console.log('💾 Starting cursor position save...');
                 
-                if (range.start !== undefined && range.end !== undefined && 
-                    typeof range.start === 'number' && typeof range.end === 'number') {
-                    positionInfo = {
-                        start: range.start,
-                        end: range.end
-                    };
-                    console.log('✅ Position info extracted from range:', positionInfo);
-                } else {
-                    console.warn('⚠️ Range position values are invalid');
+                await Word.run(async (context) => {
+                    const selection = context.document.getSelection();
                     
-                    // 方法2: 文書全体から相対位置を計算
-                    try {
+                    // 基本的な情報を取得
+                    selection.load('text, isEmpty');
+                    await context.sync();
+                    
+                    console.log('📝 Selection info:', {
+                        text: selection.text,
+                        isEmpty: selection.isEmpty,
+                        textLength: selection.text ? selection.text.length : 0
+                    });
+                    
+                    // Word Onlineでは位置情報の取得が制限されているため、
+                    // 選択されたテキストのみを保存
+                    if (selection.text && selection.text.trim() !== '') {
+                        savedCursorPosition = {
+                            type: 'selection',
+                            text: selection.text,
+                            timestamp: new Date().toISOString()
+                        };
+                        console.log('✅ Selection text saved:', savedCursorPosition);
+                    } else {
+                        console.log('ℹ️ No text selected - cursor position save skipped');
+                        savedCursorPosition = null;
+                    }
+                });
+            } catch (error) {
+                console.error('❌ Failed to save cursor position:', error);
+                savedCursorPosition = null;
+            }
+        }
+
+        // カーソル位置を復元（簡素化版）
+        async function restoreCursorPosition() {
+            try {
+                if (!savedCursorPosition) {
+                    console.log('ℹ️ No saved cursor position to restore');
+                    return;
+                }
+                
+                if (typeof Word === 'undefined') {
+                    console.log('❌ Word API not available for cursor position restore');
+                    return;
+                }
+                
+                console.log('🔄 Starting cursor position restore...', savedCursorPosition);
+                
+                // Word Onlineでは位置情報の復元が制限されているため、
+                // 選択されたテキストの検索のみを試行
+                if (savedCursorPosition.type === 'selection' && savedCursorPosition.text) {
+                    await Word.run(async (context) => {
                         const body = context.document.body;
                         body.load('text');
                         await context.sync();
                         
                         const documentText = body.text || '';
-                        const selectedText = selection.text || '';
+                        const searchText = savedCursorPosition.text;
                         
-                        if (selectedText && documentText.includes(selectedText)) {
-                            const startIndex = documentText.indexOf(selectedText);
-                            const endIndex = startIndex + selectedText.length;
+                        if (documentText.includes(searchText)) {
+                            const startIndex = documentText.indexOf(searchText);
+                            const endIndex = startIndex + searchText.length;
                             
-                            positionInfo = {
-                                start: startIndex,
-                                end: endIndex
-                            };
-                            console.log('✅ Position calculated from text search:', positionInfo);
+                            const selection = context.document.getSelection();
+                            selection.select(startIndex, endIndex);
+                            await context.sync();
+                            
+                            console.log('✅ Selection restored by text search');
                         } else {
-                            console.warn('⚠️ Could not calculate position from text search');
+                            console.log('ℹ️ Saved text not found in document');
                         }
-                    } catch (textError) {
-                        console.warn('⚠️ Text-based position calculation failed:', textError);
-                    }
+                    });
+                } else {
+                    console.log('ℹ️ No valid selection to restore');
                 }
-                
-            } catch (posError) {
-                console.warn('⚠️ Position extraction failed:', posError);
+            } catch (error) {
+                console.error('❌ Failed to restore cursor position:', error);
             }
-            
-            if (selection.text && selection.text.trim() !== '' && positionInfo) {
-                // テキストが選択されている場合は選択範囲を保存
-                savedCursorPosition = {
-                    type: 'selection',
-                    text: selection.text,
-                    start: positionInfo.start,
-                    end: positionInfo.end,
-                    timestamp: new Date().toISOString()
-                };
-                console.log('✅ Selection range saved:', savedCursorPosition);
-            } else if (positionInfo) {
-                // カーソル位置のみの場合は位置を保存
-                savedCursorPosition = {
-                    type: 'cursor',
-                    position: positionInfo.start,
-                    timestamp: new Date().toISOString()
-                };
-                console.log('✅ Cursor position saved:', savedCursorPosition);
-            } else {
-                console.warn('⚠️ Could not extract valid position information');
-                savedCursorPosition = null;
-            }
-        });
-    } catch (error) {
-        console.error('❌ Failed to save cursor position:', error);
-        savedCursorPosition = null;
-    }
-}
-
-// カーソル位置を復元
-async function restoreCursorPosition() {
-    try {
-        if (!savedCursorPosition) {
-            console.log('❌ No saved cursor position to restore');
-            return;
         }
-        
-        if (typeof Word === 'undefined') {
-            console.log('❌ Word API not available for cursor position restore');
-            return;
-        }
-        
-        console.log('🔄 Starting cursor position restore...', savedCursorPosition);
-        
-        await Word.run(async (context) => {
-            const selection = context.document.getSelection();
-            
-            if (savedCursorPosition.type === 'selection') {
-                // 選択範囲を復元
-                console.log('📝 Restoring selection range:', {
-                    start: savedCursorPosition.start,
-                    end: savedCursorPosition.end,
-                    text: savedCursorPosition.text
-                });
-                
-                if (savedCursorPosition.start !== undefined && savedCursorPosition.end !== undefined) {
-                    selection.select(savedCursorPosition.start, savedCursorPosition.end);
-                }
-            } else if (savedCursorPosition.type === 'cursor') {
-                // カーソル位置を復元
-                console.log('📍 Restoring cursor position:', savedCursorPosition.position);
-                
-                if (savedCursorPosition.position !== undefined) {
-                    selection.select(savedCursorPosition.position, savedCursorPosition.position);
-                }
-            }
-            
-            await context.sync();
-            console.log('✅ Cursor position restored successfully');
-        });
-    } catch (error) {
-        console.error('❌ Failed to restore cursor position:', error);
-    }
-}
 
 // 領域の選択
 function selectArea(area) {
@@ -631,13 +580,13 @@ function handleKeyPress(event) {
     
     console.log(`Key pressed: ${key} in ${targetId}`);
     
-    if (targetId === 'save-area') {
-        saveFormat(key);
-    } else if (targetId === 'font-control') {
-        adjustFontSize(key);
-    } else if (targetId === 'line-spacing-control') {
-        adjustLineSpacing(key);
-    }
+            if (targetId === 'save-area') {
+                saveFormat(key);
+            } else if (targetId === 'font-control') {
+                adjustFontSize(key);
+            } else if (targetId === 'continuous-control') {
+                saveContinuousFormat(key);
+            }
     
     // 視覚的フィードバック
     if (event.currentTarget && event.currentTarget.classList) {
@@ -824,15 +773,65 @@ function saveFormat(key) {
             }
         }
 
-// 選択変更時の処理
-function onSelectionChanged() {
-    console.log('Selection changed');
-    try {
-        updateCurrentFormat();
-    } catch (error) {
-        console.error('Selection change error:', error);
-    }
-}
+        // 選択変更時の処理
+        function onSelectionChanged() {
+            console.log('Selection changed');
+            try {
+                updateCurrentFormat();
+                
+                // 連続モードが有効で、書式が保存されている場合
+                if (continuousMode && continuousFormat) {
+                    applyContinuousFormat();
+                }
+            } catch (error) {
+                console.error('Selection change error:', error);
+            }
+        }
+
+        // 連続書式を適用
+        function applyContinuousFormat() {
+            if (!continuousFormat) return;
+
+            Word.run(async (context) => {
+                try {
+                    const selection = context.document.getSelection();
+                    selection.load('text');
+                    await context.sync();
+
+                    // テキストが選択されている場合のみ適用
+                    if (selection.text && selection.text.trim() !== '') {
+                        console.log('🎨 Applying continuous format to:', selection.text);
+                        
+                        const font = selection.font;
+                        const paragraph = selection.paragraphs.getFirst();
+
+                        // フォント書式を適用
+                        if (continuousFormat.font.name) font.name = continuousFormat.font.name;
+                        if (continuousFormat.font.size) font.size = continuousFormat.font.size;
+                        if (continuousFormat.font.bold !== undefined) font.bold = continuousFormat.font.bold;
+                        if (continuousFormat.font.italic !== undefined) font.italic = continuousFormat.font.italic;
+                        if (continuousFormat.font.color) font.color = continuousFormat.font.color;
+                        if (continuousFormat.font.underline !== undefined) font.underline = continuousFormat.font.underline;
+                        if (continuousFormat.font.highlightColor) font.highlightColor = continuousFormat.font.highlightColor;
+
+                        // 段落書式を適用
+                        if (continuousFormat.paragraph.alignment) paragraph.alignment = continuousFormat.paragraph.alignment;
+                        if (continuousFormat.paragraph.leftIndent !== undefined) paragraph.leftIndent = continuousFormat.paragraph.leftIndent;
+                        if (continuousFormat.paragraph.rightIndent !== undefined) paragraph.rightIndent = continuousFormat.paragraph.rightIndent;
+                        if (continuousFormat.paragraph.lineSpacing !== undefined) paragraph.lineSpacing = continuousFormat.paragraph.lineSpacing;
+                        if (continuousFormat.paragraph.spaceAfter !== undefined) paragraph.spaceAfter = continuousFormat.paragraph.spaceAfter;
+                        if (continuousFormat.paragraph.spaceBefore !== undefined) paragraph.spaceBefore = continuousFormat.paragraph.spaceBefore;
+
+                        await context.sync();
+                        console.log('✅ Continuous format applied successfully');
+                    }
+                } catch (error) {
+                    console.error('連続書式適用エラー:', error);
+                }
+            }).catch(error => {
+                console.error('Word.run エラー:', error);
+            });
+        }
 
 // 現在の書式を更新
 function updateCurrentFormat() {
@@ -1215,19 +1214,16 @@ function adjustFontSize(key) {
     applyCurrentFormat();
 }
 
-// 行間調整
-function adjustLineSpacing(key) {
-    const step = 0.5;
-    if (key === '+' || key === '=') {
-        currentLineSpacing += step;
-    } else if (key === '-') {
-        currentLineSpacing = Math.max(0.5, currentLineSpacing - step);
-    } else {
-        return;
-    }
+// 連続モード切り替え
+function toggleContinuousMode() {
+    continuousMode = !continuousMode;
+    updateContinuousDisplay();
     
-    updateLineSpacingDisplay();
-    applyCurrentFormat();
+    const t = texts[currentLanguage];
+    const message = continuousMode ? t.continuousModeEnabled : t.continuousModeDisabled;
+    showMessage(message, 'success');
+    
+    console.log('🔄 Continuous mode:', continuousMode ? 'ON' : 'OFF');
 }
 
 // フォントサイズ表示更新
@@ -1238,13 +1234,37 @@ function updateFontSizeDisplay() {
     }
 }
 
-// 行間表示更新
-function updateLineSpacingDisplay() {
-    const display = document.getElementById('line-spacing-display');
-    if (display) {
-        display.textContent = currentLineSpacing.toFixed(1);
-    }
-}
+        // 連続モード表示更新
+        function updateContinuousDisplay() {
+            const display = document.getElementById('continuous-display');
+            if (display) {
+                const t = texts[currentLanguage];
+                display.textContent = continuousMode ? t.continuousModeOn : t.continuousModeOff;
+            }
+        }
+
+        // 連続適用用の書式を保存
+        function saveContinuousFormat(key) {
+            if (!currentFormat) {
+                showMessage(texts[currentLanguage].noTextSelected, 'error');
+                return;
+            }
+
+            try {
+                continuousFormat = {
+                    ...currentFormat,
+                    timestamp: new Date().toISOString()
+                };
+
+                const t = texts[currentLanguage];
+                showMessage(t.continuousFormatSaved, 'success');
+                
+                console.log('💾 Continuous format saved:', continuousFormat);
+            } catch (error) {
+                console.error('連続書式保存エラー:', error);
+                showMessage('連続書式の保存に失敗しました', 'error');
+            }
+        }
 
         // 現在の書式を適用
         function applyCurrentFormat() {
