@@ -809,6 +809,11 @@ function saveFormat(key) {
                         paragraph.spaceBefore = format.paragraph.spaceBefore;
                         console.log('✅ Space before applied:', format.paragraph.spaceBefore);
                     }
+                    if (format.paragraph.listFormat) {
+                        console.log('📝 Applying list format:', format.paragraph.listFormat);
+                        paragraph.listFormat = format.paragraph.listFormat;
+                        console.log('✅ List format applied:', format.paragraph.listFormat);
+                    }
 
                     await context.sync();
 
@@ -915,7 +920,7 @@ function updateCurrentFormat() {
             
             // 書式情報を読み込み
             font.load('name, size, bold, italic, color, underline, highlightColor');
-            paragraph.load('alignment, leftIndent, rightIndent, lineSpacing, spaceAfter, spaceBefore');
+            paragraph.load('alignment, leftIndent, rightIndent, lineSpacing, spaceAfter, spaceBefore, listFormat');
             
             await context.sync();
             
@@ -944,7 +949,8 @@ function updateCurrentFormat() {
                     rightIndent: paragraph.rightIndent,
                     lineSpacing: paragraph.lineSpacing,
                     spaceAfter: paragraph.spaceAfter,
-                    spaceBefore: paragraph.spaceBefore
+                    spaceBefore: paragraph.spaceBefore,
+                    listFormat: paragraph.listFormat
                 }
             };
             
@@ -987,11 +993,18 @@ function displayCurrentFormat(format) {
     // 配置の日本語表示
     const alignmentText = getAlignmentText(paragraph.alignment);
     
+    // 箇条書き情報の表示
+    let listInfo = '';
+    if (paragraph.listFormat && paragraph.listFormat.type !== 'None') {
+        const listTypeText = getListTypeText(paragraph.listFormat.type);
+        listInfo = ` | ${listTypeText}`;
+    }
+    
     const formatText = `
         <div class="format-info">
             <strong>${font.name}</strong> ${font.size}px<br>
             ${font.bold ? '太字' : ''} ${font.italic ? '斜体' : ''}<br>
-            ${alignmentText} | 色: ${font.color}
+            ${alignmentText} | 色: ${font.color}${listInfo}
         </div>
     `;
     
@@ -1007,6 +1020,16 @@ function getAlignmentText(alignment) {
         'Justified': currentLanguage === 'ja' ? '両端揃え' : 'Justified'
     };
     return alignments[alignment] || alignment;
+}
+
+// 箇条書きタイプの日本語表示を取得
+function getListTypeText(listType) {
+    const listTypes = {
+        'Bullet': currentLanguage === 'ja' ? '箇条書き' : 'Bullet',
+        'Number': currentLanguage === 'ja' ? '番号付き' : 'Number',
+        'None': currentLanguage === 'ja' ? 'なし' : 'None'
+    };
+    return listTypes[listType] || listType;
 }
 
 // 保存された書式を読み込み
@@ -1038,7 +1061,7 @@ function updateSavedFormatsList() {
             <div class="format-item" data-key="${key}" tabindex="0">
                 <div>
                     <div class="format-key">${key}</div>
-                    <div class="format-preview">${format.font.name} ${format.font.size}px - ${getAlignmentText(format.paragraph.alignment)} (${date})</div>
+                    <div class="format-preview">${format.font.name} ${format.font.size}px - ${getAlignmentText(format.paragraph.alignment)}${format.paragraph.listFormat && format.paragraph.listFormat.type !== 'None' ? ' | ' + getListTypeText(format.paragraph.listFormat.type) : ''} (${date})</div>
                 </div>
                 <button class="format-remove" data-key="${key}">×</button>
             </div>
@@ -1065,11 +1088,15 @@ function updateSavedFormatsList() {
             
             button.addEventListener('click', (e) => {
                 console.log('🗑️ Delete button click event triggered');
+                console.log('🗑️ Event target:', e.target);
+                console.log('🗑️ Button element:', button);
+                console.log('🗑️ Button dataset:', button.dataset);
                 e.preventDefault();
                 e.stopPropagation();
                 const key = button.dataset.key;
                 console.log('🗑️ Delete button clicked for key:', key);
                 if (key) {
+                    console.log('🗑️ Calling removeFormat with key:', key);
                     removeFormat(key);
                 } else {
                     console.error('🗑️ No key found for delete button');
