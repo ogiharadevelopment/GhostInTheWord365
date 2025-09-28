@@ -16,11 +16,15 @@ function detectLanguage() {
 }
 
 // 初期化時に言語を設定
-currentLanguage = detectLanguage();
+loadLanguage(); // 保存された言語設定を読み込み
+if (!currentLanguage) {
+    currentLanguage = detectLanguage(); // 保存されていない場合はブラウザの言語を検出
+}
 
 // 言語切り替え関数
 function setLanguage(lang) {
     currentLanguage = lang;
+    localStorage.setItem('formatManagerLanguage', lang);
     updateUI();
     
     // アクティブ状態を更新
@@ -63,8 +67,6 @@ const texts = {
         keyGuideText: '保存された書式にマウスオーバーしてキーを押すと書式を適用します',
         fontLabel: 'フォント',
         continuousLabel: '連続',
-        loadLabel: 'LOAD',
-        loadInstruction: 'キーを押して適用',
         formatSaved: '書式を保存しました',
         formatApplied: '書式を適用しました',
         formatNotFound: '保存された書式が見つかりません',
@@ -95,8 +97,6 @@ const texts = {
         keyGuideText: 'Mouse over a saved format and press a key to apply it',
         fontLabel: 'Font',
         continuousLabel: 'Continuous',
-        loadLabel: 'LOAD',
-        loadInstruction: 'Press key to apply',
         formatSaved: 'Format saved',
         formatApplied: 'Format applied',
         formatNotFound: 'Saved format not found',
@@ -169,9 +169,13 @@ function initializeApp() {
         // Word APIの可用性チェック
         checkWordAPIAvailability();
         
-        console.log('Step 2: Language loading');
-        // 言語設定の読み込み
+        console.log('Step 2: Language setup');
+        // 言語設定の読み込みとUI更新
         loadLanguage();
+        if (!currentLanguage) {
+            currentLanguage = detectLanguage();
+        }
+        console.log('Current language:', currentLanguage);
         
         console.log('Step 3: UI update');
         // UIの初期化
@@ -478,17 +482,6 @@ function setupEventListeners() {
         console.error('❌ setupEventListeners error:', error);
         console.error('Error stack:', error.stack);
     }
-}
-
-// 言語設定
-function setLanguage(lang) {
-    currentLanguage = lang;
-    localStorage.setItem('formatManagerLanguage', lang);
-    updateUI();
-    
-    // 言語ボタンの状態更新
-    document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
-    document.getElementById(`lang-${lang}`).classList.add('active');
 }
 
 // 言語設定の読み込み
@@ -1257,7 +1250,8 @@ function updateContinuousDisplay() {
                 display.textContent = `ON (${continuousFormat.key})`;
             } else {
                 // キーが指定されていない場合
-                display.textContent = 'ON (指定なし)';
+                const noKeyText = currentLanguage === 'ja' ? 'ON (指定なし)' : 'ON (No Key)';
+                display.textContent = noKeyText;
             }
         } else {
             display.textContent = t.continuousModeOff;
@@ -1280,7 +1274,10 @@ function setContinuousFormat(key) {
         };
 
         const t = texts[currentLanguage];
-        showMessage(`${key}: 連続適用用書式を設定しました`, 'success');
+        const message = currentLanguage === 'ja' 
+            ? `${key}: 連続適用用書式を設定しました`
+            : `${key}: Continuous format set`;
+        showMessage(message, 'success');
         
         // 表示を更新
         updateContinuousDisplay();
