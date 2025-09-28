@@ -1035,40 +1035,76 @@ function updateSavedFormatsList() {
     
     savedFormatsList.innerHTML = html;
     
-    // 削除ボタンのイベントリスナーを追加
-    const removeButtons = savedFormatsList.querySelectorAll('.format-remove');
-    removeButtons.forEach(button => {
-        button.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const key = button.dataset.key;
-            console.log('Delete button clicked for key:', key);
-            removeFormat(key);
+    // イベントリスナーを追加（少し遅延させて確実に追加）
+    setTimeout(() => {
+        // 削除ボタンのイベントリスナーを追加
+        const removeButtons = savedFormatsList.querySelectorAll('.format-remove');
+        removeButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const key = button.dataset.key;
+                console.log('🗑️ Delete button clicked for key:', key);
+                if (key) {
+                    removeFormat(key);
+                }
+            });
+            
+            button.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            });
         });
         
-        button.addEventListener('mousedown', (e) => {
-            e.stopPropagation();
+        // 書式項目のイベントリスナーを追加（クリックで適用）
+        const formatItems = savedFormatsList.querySelectorAll('.format-item');
+        formatItems.forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // 削除ボタンがクリックされた場合は処理を停止
+                if (e.target.classList.contains('format-remove')) {
+                    return;
+                }
+                
+                // 書式キーを取得して適用
+                const formatKey = item.querySelector('.format-key');
+                if (formatKey) {
+                    const key = formatKey.textContent;
+                    console.log('🎨 Format item clicked, applying format:', key);
+                    loadFormat(key);
+                }
+            });
         });
-    });
-    
-    // 書式項目のイベントリスナーを追加（クリックのみ）
-    const formatItems = savedFormatsList.querySelectorAll('.format-item');
-    formatItems.forEach(item => {
-        item.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            item.focus();
-        });
-    });
+    }, 10);
 }
 
 // 書式の削除
 function removeFormat(key) {
-    if (confirm(`書式 "${key}" を削除しますか？`)) {
+    const t = texts[currentLanguage];
+    const confirmMessage = t.deleteConfirm ? t.deleteConfirm(key) : `書式 "${key}" を削除しますか？`;
+    
+    if (confirm(confirmMessage)) {
         delete savedFormats[key];
         localStorage.setItem('savedFormats', JSON.stringify(savedFormats));
+        
+        // 連続書式が削除された書式と同じ場合はリセット
+        if (continuousFormat && continuousFormat.key === key) {
+            continuousFormat = null;
+            console.log('🔄 Continuous format reset due to deletion');
+        }
+        
+        // 表示を更新
         updateSavedFormatsList();
-        showMessage(`書式 "${key}" を削除しました`, 'success');
+        updateContinuousDisplay();
+        
+        const successMessage = currentLanguage === 'ja' 
+            ? `書式 "${key}" を削除しました`
+            : `Format "${key}" deleted`;
+        showMessage(successMessage, 'success');
+        
+        console.log('🗑️ Format deleted:', key);
     }
 }
 
