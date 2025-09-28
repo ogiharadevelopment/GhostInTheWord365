@@ -506,8 +506,6 @@ function updateUI() {
         'save-instruction': t.saveInstruction,
         'saved-formats-title': t.savedFormatsTitle,
         'no-saved-formats-text': t.noSavedFormatsText,
-        'key-guide-title': t.keyGuideTitle,
-        'key-guide-text': t.keyGuideText,
         'font-label': t.fontLabel,
         'continuous-label': t.continuousLabel,
         'load-label': t.loadLabel,
@@ -784,8 +782,17 @@ function saveFormat(key) {
                     console.log('📝 Paragraph format data:', format.paragraph);
                     if (format.paragraph.alignment) {
                         console.log('📝 Applying alignment:', format.paragraph.alignment);
+                        console.log('📝 Paragraph object before alignment:', {
+                            alignment: paragraph.alignment,
+                            text: selection.text
+                        });
                         paragraph.alignment = format.paragraph.alignment;
                         console.log('✅ Alignment applied:', format.paragraph.alignment);
+                        
+                        // 適用後の確認
+                        paragraph.load('alignment');
+                        await context.sync();
+                        console.log('📝 Paragraph alignment after apply:', paragraph.alignment);
                     } else {
                         console.log('⚠️ No alignment data in format');
                     }
@@ -849,7 +856,6 @@ function saveFormat(key) {
                 }
                 if (format.paragraph.lineSpacing) {
                     currentLineSpacing = format.paragraph.lineSpacing;
-                    updateLineSpacingDisplay();
                 }
                 
                 // 現在の書式表示を更新
