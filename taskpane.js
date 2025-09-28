@@ -501,11 +501,9 @@ function updateUI() {
     const elements = {
         'app-title': t.appTitle,
         'current-format-title': t.currentFormatTitle,
-        'no-selection-text': t.noSelectionText,
         'save-label': t.saveLabel,
         'save-instruction': t.saveInstruction,
         'saved-formats-title': t.savedFormatsTitle,
-        'no-saved-formats-text': t.noSavedFormatsText,
         'font-label': t.fontLabel,
         'continuous-label': t.continuousLabel,
         'load-label': t.loadLabel,
@@ -842,6 +840,10 @@ function saveFormat(key) {
                         } else {
                             console.log('⚠️ List format not available for removal');
                         }
+                    } else if (format.paragraph.listFormat && format.paragraph.listFormat.type !== 'None') {
+                        // listFormat APIが利用できない場合の手動適用
+                        console.log('📝 List format detected but API not available, using manual method');
+                        await applyListFormatManually(selection, format.paragraph.listFormat);
                     }
 
                     await context.sync();
@@ -1256,13 +1258,14 @@ function updateSavedFormatsList() {
         const formatItems = savedFormatsList.querySelectorAll('.format-item');
         formatItems.forEach(item => {
             item.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                
                 // 削除ボタンがクリックされた場合は処理を停止
-                if (e.target.classList.contains('format-remove')) {
+                if (e.target.classList.contains('format-remove') || e.target.closest('.format-remove')) {
+                    console.log('🗑️ Delete button clicked, skipping format application');
                     return;
                 }
+                
+                e.preventDefault();
+                e.stopPropagation();
                 
                 // 書式キーを取得して適用
                 const formatKey = item.querySelector('.format-key');
