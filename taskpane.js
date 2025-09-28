@@ -813,20 +813,32 @@ function saveFormat(key) {
                         console.log('📝 Applying list format:', format.paragraph.listFormat);
                         const listFormat = paragraph.listFormat;
                         if (listFormat) {
-                            listFormat.type = format.paragraph.listFormat.type;
-                            if (format.paragraph.listFormat.level !== undefined) {
-                                listFormat.level = format.paragraph.listFormat.level;
+                            try {
+                                listFormat.type = format.paragraph.listFormat.type;
+                                if (format.paragraph.listFormat.level !== undefined) {
+                                    listFormat.level = format.paragraph.listFormat.level;
+                                }
+                                console.log('✅ List format applied:', format.paragraph.listFormat);
+                            } catch (error) {
+                                console.log('⚠️ List format API not available, using manual method');
+                                // 手動で箇条書きを適用
+                                await applyListFormatManually(selection, format.paragraph.listFormat);
                             }
-                            console.log('✅ List format applied:', format.paragraph.listFormat);
                         } else {
-                            console.log('⚠️ List format not available for application');
+                            console.log('⚠️ List format not available, using manual method');
+                            // 手動で箇条書きを適用
+                            await applyListFormatManually(selection, format.paragraph.listFormat);
                         }
                     } else if (format.paragraph.listFormat && format.paragraph.listFormat.type === 'None') {
                         console.log('📝 Removing list format');
                         const listFormat = paragraph.listFormat;
                         if (listFormat) {
-                            listFormat.type = 'None';
-                            console.log('✅ List format removed');
+                            try {
+                                listFormat.type = 'None';
+                                console.log('✅ List format removed');
+                            } catch (error) {
+                                console.log('⚠️ List format API not available for removal');
+                            }
                         } else {
                             console.log('⚠️ List format not available for removal');
                         }
@@ -939,10 +951,26 @@ function updateCurrentFormat() {
             font.load('name, size, bold, italic, color, underline, highlightColor');
             paragraph.load('alignment, leftIndent, rightIndent, lineSpacing, spaceAfter, spaceBefore');
             
-            // 箇条書き情報を別途読み込み
+            // 箇条書き情報を別途読み込み（Word Onlineでは制限がある可能性）
             const listFormat = paragraph.listFormat;
+            let listInfo = null;
+            
             if (listFormat) {
-                listFormat.load('type, level');
+                try {
+                    listFormat.load('type, level');
+                    await context.sync();
+                    listInfo = {
+                        type: listFormat.type,
+                        level: listFormat.level
+                    };
+                } catch (error) {
+                    console.log('⚠️ List format not available in Word Online:', error.message);
+                    // 代替手段：テキストの先頭文字をチェックして箇条書きを検出
+                    listInfo = detectListFromText(selection.text);
+                }
+            } else {
+                // 代替手段：テキストの先頭文字をチェックして箇条書きを検出
+                listInfo = detectListFromText(selection.text);
             }
             
             await context.sync();
@@ -955,9 +983,9 @@ function updateCurrentFormat() {
                 color: font.color
             });
             
-            console.log('List format info:', listFormat ? {
-                type: listFormat.type,
-                level: listFormat.level
+            console.log('List format info:', listInfo ? {
+                type: listInfo.type,
+                level: listInfo.level
             } : 'No list format available');
             
             // 書式情報を取得
@@ -978,10 +1006,7 @@ function updateCurrentFormat() {
                     lineSpacing: paragraph.lineSpacing,
                     spaceAfter: paragraph.spaceAfter,
                     spaceBefore: paragraph.spaceBefore,
-                    listFormat: listFormat ? {
-                        type: listFormat.type,
-                        level: listFormat.level
-                    } : {
+                    listFormat: listInfo || {
                         type: 'None',
                         level: 0
                     }
@@ -1060,6 +1085,75 @@ function getAlignmentText(alignment) {
         'Justified': currentLanguage === 'ja' ? '両端揃え' : 'Justified'
     };
     return alignments[alignment] || alignment;
+}
+
+// テキストから箇条書きを検出する関数
+function detectListFromText(text) {
+    if (!text || text.trim() === '') {
+        return { type: 'None', level: 0 };
+    }
+    
+    const trimmedText = text.trim();
+    
+    // 番号付きリストの検出（1. 2. 3. など）
+    const numberedMatch = trimmedText.match(/^(\d+)\.\s+/);
+    if (numberedMatch) {
+        return { type: 'Number', level: 0 };
+    }
+    
+    // 箇条書きの検出（• - * など）
+    const bulletMatch = trimmedText.match(/^[•\-\*]\s+/);
+    if (bulletMatch) {
+        return { type: 'Bullet', level: 0 };
+    }
+    
+    // インデントレベルを検出（スペースやタブの数）
+    const indentMatch = trimmedText.match(/^(\s+)/);
+    let level = 0;
+    if (indentMatch) {
+        const spaces = indentMatch[1].length;
+        level = Math.floor(spaces / 4); // 4スペースごとにレベル1
+    }
+    
+    return { type: 'None', level: level };
+}
+
+// 手動で箇条書きを適用する関数
+async function applyListFormatManually(selection, listFormat) {
+    try {
+        console.log('🔧 Applying list format manually:', listFormat);
+        
+        // 現在のテキストを取得
+        selection.load('text');
+        await selection.context.sync();
+        
+        let currentText = selection.text;
+        let newText = currentText;
+        
+        // 既存の箇条書き記号を削除
+        newText = newText.replace(/^[\d+\.\s•\-\*]+/, '');
+        
+        // インデントを追加
+        const indent = '    '.repeat(listFormat.level || 0);
+        
+        // 箇条書き記号を追加
+        if (listFormat.type === 'Bullet') {
+            newText = indent + '• ' + newText;
+        } else if (listFormat.type === 'Number') {
+            newText = indent + '1. ' + newText;
+        } else {
+            newText = indent + newText;
+        }
+        
+        // テキストを置換
+        selection.insertText(newText, Word.InsertReplace.replace);
+        await selection.context.sync();
+        
+        console.log('✅ List format applied manually');
+        
+    } catch (error) {
+        console.error('❌ Failed to apply list format manually:', error);
+    }
 }
 
 // 箇条書きタイプの日本語表示を取得
