@@ -1190,13 +1190,7 @@ function updateContinuousDisplay() {
     const display = document.getElementById('continuous-display');
     if (display) {
         const t = texts[currentLanguage];
-        if (continuousMode && continuousFormat) {
-            // 保持している書式のキーを表示（最初の5文字）
-            const formatKey = continuousFormat.key || 'FORMAT';
-            display.textContent = formatKey.substring(0, 5);
-        } else {
-            display.textContent = t.continuousModeOff;
-        }
+        display.textContent = continuousMode ? t.continuousModeOn : t.continuousModeOff;
     }
 }
 
@@ -1210,15 +1204,11 @@ function saveContinuousFormat(key) {
     try {
         continuousFormat = {
             ...currentFormat,
-            key: key, // キー情報を追加
             timestamp: new Date().toISOString()
         };
 
         const t = texts[currentLanguage];
         showMessage(t.continuousFormatSaved, 'success');
-        
-        // 表示を更新
-        updateContinuousDisplay();
         
         console.log('💾 Continuous format saved:', continuousFormat);
     } catch (error) {
