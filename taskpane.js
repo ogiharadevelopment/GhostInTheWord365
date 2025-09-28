@@ -46,6 +46,7 @@ let continuousMode = false; // 連続モード
 let continuousFormat = null; // 連続適用用の書式
 let isMouseOverSaveArea = false; // SAVEエリアのマウスオーバー状態
 let isMouseOverLoadArea = false; // LOADエリアのマウスオーバー状態
+let isMouseOverContinuousArea = false; // 連続エリアのマウスオーバー状態
 
 // 多言語対応テキスト
 const texts = {
@@ -358,6 +359,7 @@ function setupEventListeners() {
             continuousControl.addEventListener('mouseenter', async (e) => {
                 console.log('🖱️ Continuous control mouseenter');
                 e.preventDefault();
+                isMouseOverContinuousArea = true; // マウスオーバー状態を設定
                 await saveCursorPosition(); // カーソル位置を保存
                 selectArea('continuous');
                 setTimeout(() => {
@@ -367,6 +369,7 @@ function setupEventListeners() {
             
             continuousControl.addEventListener('mouseleave', async (e) => {
                 console.log('🖱️ Continuous control mouseleave');
+                isMouseOverContinuousArea = false; // マウスオーバー状態を解除
                 await restoreCursorPosition(); // カーソル位置を復元
             });
             
@@ -664,8 +667,10 @@ function handleKeyPress(event) {
     } else if (targetId === 'font-control') {
         adjustFontSize(key);
     } else if (targetId === 'continuous-control') {
-        // 連続ボタンは既存の保存された書式を連続適用用に設定
-        setContinuousFormat(key);
+        // 連続ボタンはマウスオーバー中のみキー入力を受け付ける
+        if (isMouseOverContinuousArea) {
+            setContinuousFormat(key);
+        }
     }
     
     // 視覚的フィードバック
@@ -687,10 +692,16 @@ function saveFormat(key) {
     }
     
     try {
+        console.log('💾 Saving format with key:', key);
+        console.log('💾 Current format data:', currentFormat);
+        
         savedFormats[key] = {
             ...currentFormat,
             timestamp: new Date().toISOString()
         };
+        
+        console.log('💾 Saved format data:', savedFormats[key]);
+        console.log('💾 Paragraph alignment in saved format:', savedFormats[key].paragraph?.alignment);
         
         localStorage.setItem('savedFormats', JSON.stringify(savedFormats));
         updateSavedFormatsList();
@@ -770,9 +781,13 @@ function saveFormat(key) {
                     }
 
                     // 段落書式を適用
+                    console.log('📝 Paragraph format data:', format.paragraph);
                     if (format.paragraph.alignment) {
+                        console.log('📝 Applying alignment:', format.paragraph.alignment);
                         paragraph.alignment = format.paragraph.alignment;
                         console.log('✅ Alignment applied:', format.paragraph.alignment);
+                    } else {
+                        console.log('⚠️ No alignment data in format');
                     }
                     if (format.paragraph.leftIndent !== undefined) {
                         paragraph.leftIndent = format.paragraph.leftIndent;
@@ -1037,18 +1052,27 @@ function updateSavedFormatsList() {
     setTimeout(() => {
         // 削除ボタンのイベントリスナーを追加
         const removeButtons = savedFormatsList.querySelectorAll('.format-remove');
-        removeButtons.forEach(button => {
+        console.log('🗑️ Found remove buttons:', removeButtons.length);
+        
+        removeButtons.forEach((button, index) => {
+            const key = button.dataset.key;
+            console.log(`🗑️ Setting up delete button ${index} for key:`, key);
+            
             button.addEventListener('click', (e) => {
+                console.log('🗑️ Delete button click event triggered');
                 e.preventDefault();
                 e.stopPropagation();
                 const key = button.dataset.key;
                 console.log('🗑️ Delete button clicked for key:', key);
                 if (key) {
                     removeFormat(key);
+                } else {
+                    console.error('🗑️ No key found for delete button');
                 }
             });
             
             button.addEventListener('mousedown', (e) => {
+                console.log('🗑️ Delete button mousedown event');
                 e.preventDefault();
                 e.stopPropagation();
             });
@@ -1080,12 +1104,25 @@ function updateSavedFormatsList() {
 
 // 書式の削除
 function removeFormat(key) {
+    console.log('🗑️ removeFormat called with key:', key);
+    console.log('🗑️ Current savedFormats:', Object.keys(savedFormats));
+    
     const t = texts[currentLanguage];
     const confirmMessage = t.deleteConfirm ? t.deleteConfirm(key) : `書式 "${key}" を削除しますか？`;
     
+    console.log('🗑️ Showing confirm dialog:', confirmMessage);
+    
     if (confirm(confirmMessage)) {
+        console.log('🗑️ User confirmed deletion');
+        
+        // 書式を削除
         delete savedFormats[key];
+        console.log('🗑️ Format deleted from memory:', key);
+        console.log('🗑️ Remaining formats:', Object.keys(savedFormats));
+        
+        // localStorageに保存
         localStorage.setItem('savedFormats', JSON.stringify(savedFormats));
+        console.log('🗑️ Saved to localStorage');
         
         // 連続書式が削除された書式と同じ場合はリセット
         if (continuousFormat && continuousFormat.key === key) {
@@ -1094,6 +1131,7 @@ function removeFormat(key) {
         }
         
         // 表示を更新
+        console.log('🗑️ Updating UI...');
         updateSavedFormatsList();
         updateContinuousDisplay();
         
@@ -1102,7 +1140,9 @@ function removeFormat(key) {
             : `Format "${key}" deleted`;
         showMessage(successMessage, 'success');
         
-        console.log('🗑️ Format deleted:', key);
+        console.log('✅ Format deletion completed:', key);
+    } else {
+        console.log('🗑️ User cancelled deletion');
     }
 }
 
