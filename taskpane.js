@@ -35,6 +35,7 @@ const texts = {
         widthToggle: '幅: 300px',
         widthToggleNarrow: '幅: 100px',
         deleteConfirm: (key) => `書式 "${key}" を削除しますか？`,
+        savedFormatsInstruction: 'マウスオーバーしてキーを押すと適用',
         continuousModeOn: 'ON',
         continuousModeOff: 'OFF',
         continuousModeEnabled: '連続モード有効',
@@ -64,6 +65,7 @@ const texts = {
         widthToggle: 'Width: 300px',
         widthToggleNarrow: 'Width: 100px',
         deleteConfirm: (key) => `Delete format "${key}"?`,
+        savedFormatsInstruction: 'Mouse over and press key to apply',
         continuousModeOn: 'ON',
         continuousModeOff: 'OFF',
         continuousModeEnabled: 'Continuous mode enabled',
@@ -480,7 +482,10 @@ function updateUI() {
         'key-guide-text': t.keyGuideText,
         'font-label': t.fontLabel,
         'continuous-label': t.continuousLabel,
+        'load-label': t.loadLabel,
+        'load-instruction': t.loadInstruction,
         'width-toggle': t.widthToggle,
+        'saved-formats-instruction': t.savedFormatsInstruction,
         'lang-ja': t.japanese,
         'lang-en': t.english
     };
