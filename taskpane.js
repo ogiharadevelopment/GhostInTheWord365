@@ -1201,7 +1201,7 @@ function updateSavedFormatsList() {
                     <div class="format-key">${key}</div>
                     <div class="format-preview">${format.font.name} ${format.font.size}px - ${getAlignmentText(format.paragraph.alignment)}${format.paragraph.listFormat && format.paragraph.listFormat.type !== 'None' ? ' | ' + getListTypeText(format.paragraph.listFormat.type) + (format.paragraph.listFormat.level !== undefined ? ' L' + format.paragraph.listFormat.level : '') : ''} (${date})</div>
                 </div>
-                <button class="format-remove" data-key="${key}" onclick="removeFormat('${key}')">×</button>
+                <button class="format-remove" data-key="${key}" onclick="confirmDelete('${key}')">×</button>
             </div>
         `;
     }
@@ -1231,48 +1231,77 @@ function updateSavedFormatsList() {
     });
 }
 
+// 削除確認（ダブルクリック方式）
+let deleteClickCount = {};
+let deleteClickTimer = {};
+
+function confirmDelete(key) {
+    console.log('🗑️ confirmDelete called with key:', key);
+    
+    // クリック回数をカウント
+    if (!deleteClickCount[key]) {
+        deleteClickCount[key] = 0;
+    }
+    deleteClickCount[key]++;
+    
+    console.log(`🗑️ Delete click count for ${key}:`, deleteClickCount[key]);
+    
+    // 既存のタイマーをクリア
+    if (deleteClickTimer[key]) {
+        clearTimeout(deleteClickTimer[key]);
+    }
+    
+    if (deleteClickCount[key] === 1) {
+        // 1回目のクリック：確認メッセージを表示
+        const t = texts[currentLanguage];
+        const confirmMessage = t.deleteConfirm ? t.deleteConfirm(key) : `書式 "${key}" を削除しますか？`;
+        showMessage(`${confirmMessage} (もう一度クリックで削除)`, 'info');
+        
+        // 3秒後にカウントをリセット
+        deleteClickTimer[key] = setTimeout(() => {
+            deleteClickCount[key] = 0;
+            console.log(`🗑️ Delete click count reset for ${key}`);
+        }, 3000);
+        
+    } else if (deleteClickCount[key] === 2) {
+        // 2回目のクリック：削除を実行
+        console.log('🗑️ Second click detected - proceeding with deletion');
+        deleteClickCount[key] = 0;
+        removeFormat(key);
+    }
+}
+
 // 書式の削除
 function removeFormat(key) {
     console.log('🗑️ removeFormat called with key:', key);
     console.log('🗑️ Current savedFormats:', Object.keys(savedFormats));
     
-    const t = texts[currentLanguage];
-    const confirmMessage = t.deleteConfirm ? t.deleteConfirm(key) : `書式 "${key}" を削除しますか？`;
+    // 書式を削除
+    delete savedFormats[key];
+    console.log('🗑️ Format deleted from memory:', key);
+    console.log('🗑️ Remaining formats:', Object.keys(savedFormats));
     
-    console.log('🗑️ Showing confirm dialog:', confirmMessage);
+    // localStorageに保存
+    localStorage.setItem('savedFormats', JSON.stringify(savedFormats));
+    console.log('🗑️ Saved to localStorage');
     
-    if (confirm(confirmMessage)) {
-        console.log('🗑️ User confirmed deletion');
-        
-        // 書式を削除
-        delete savedFormats[key];
-        console.log('🗑️ Format deleted from memory:', key);
-        console.log('🗑️ Remaining formats:', Object.keys(savedFormats));
-        
-        // localStorageに保存
-        localStorage.setItem('savedFormats', JSON.stringify(savedFormats));
-        console.log('🗑️ Saved to localStorage');
-        
-        // 連続書式が削除された書式と同じ場合はリセット
-        if (continuousFormat && continuousFormat.key === key) {
-            continuousFormat = null;
-            console.log('🔄 Continuous format reset due to deletion');
-        }
-        
-        // 表示を更新
-        console.log('🗑️ Updating UI...');
-        updateSavedFormatsList();
-        updateContinuousDisplay();
-        
-        const successMessage = currentLanguage === 'ja' 
-            ? `書式 "${key}" を削除しました`
-            : `Format "${key}" deleted`;
-        showMessage(successMessage, 'success');
-        
-        console.log('✅ Format deletion completed:', key);
-    } else {
-        console.log('🗑️ User cancelled deletion');
+    // 連続書式が削除された書式と同じ場合はリセット
+    if (continuousFormat && continuousFormat.key === key) {
+        continuousFormat = null;
+        console.log('🔄 Continuous format reset due to deletion');
     }
+    
+    // 表示を更新
+    console.log('🗑️ Updating UI...');
+    updateSavedFormatsList();
+    updateContinuousDisplay();
+    
+    const successMessage = currentLanguage === 'ja' 
+        ? `書式 "${key}" を削除しました`
+        : `Format "${key}" deleted`;
+    showMessage(successMessage, 'success');
+    
+    console.log('✅ Format deletion completed:', key);
 }
 
 // メッセージを表示
@@ -1608,6 +1637,7 @@ function handleLineSpacingWheel(event) {
 // グローバル関数として公開
 window.removeFormat = removeFormat;
 window.loadFormat = loadFormat;
+window.confirmDelete = confirmDelete;
 
 // デバッグ用: 手動初期化
 window.manualInit = function() {
