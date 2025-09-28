@@ -812,16 +812,24 @@ function saveFormat(key) {
                     if (format.paragraph.listFormat && format.paragraph.listFormat.type !== 'None') {
                         console.log('📝 Applying list format:', format.paragraph.listFormat);
                         const listFormat = paragraph.listFormat;
-                        listFormat.type = format.paragraph.listFormat.type;
-                        if (format.paragraph.listFormat.level !== undefined) {
-                            listFormat.level = format.paragraph.listFormat.level;
+                        if (listFormat) {
+                            listFormat.type = format.paragraph.listFormat.type;
+                            if (format.paragraph.listFormat.level !== undefined) {
+                                listFormat.level = format.paragraph.listFormat.level;
+                            }
+                            console.log('✅ List format applied:', format.paragraph.listFormat);
+                        } else {
+                            console.log('⚠️ List format not available for application');
                         }
-                        console.log('✅ List format applied:', format.paragraph.listFormat);
                     } else if (format.paragraph.listFormat && format.paragraph.listFormat.type === 'None') {
                         console.log('📝 Removing list format');
                         const listFormat = paragraph.listFormat;
-                        listFormat.type = 'None';
-                        console.log('✅ List format removed');
+                        if (listFormat) {
+                            listFormat.type = 'None';
+                            console.log('✅ List format removed');
+                        } else {
+                            console.log('⚠️ List format not available for removal');
+                        }
                     }
 
                     await context.sync();
@@ -933,7 +941,9 @@ function updateCurrentFormat() {
             
             // 箇条書き情報を別途読み込み
             const listFormat = paragraph.listFormat;
-            listFormat.load('type, level');
+            if (listFormat) {
+                listFormat.load('type, level');
+            }
             
             await context.sync();
             
@@ -945,10 +955,10 @@ function updateCurrentFormat() {
                 color: font.color
             });
             
-            console.log('List format info:', {
+            console.log('List format info:', listFormat ? {
                 type: listFormat.type,
                 level: listFormat.level
-            });
+            } : 'No list format available');
             
             // 書式情報を取得
             currentFormat = {
@@ -968,9 +978,12 @@ function updateCurrentFormat() {
                     lineSpacing: paragraph.lineSpacing,
                     spaceAfter: paragraph.spaceAfter,
                     spaceBefore: paragraph.spaceBefore,
-                    listFormat: {
+                    listFormat: listFormat ? {
                         type: listFormat.type,
                         level: listFormat.level
+                    } : {
+                        type: 'None',
+                        level: 0
                     }
                 }
             };
@@ -989,6 +1002,11 @@ function updateCurrentFormat() {
             
         } catch (error) {
             console.error('書式取得エラー:', error);
+            console.error('Error details:', {
+                message: error.message,
+                stack: error.stack,
+                name: error.name
+            });
             currentFormat = null;
             displayCurrentFormat(null);
         }
