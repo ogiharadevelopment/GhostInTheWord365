@@ -448,73 +448,58 @@ async function saveCursorPosition() {
         await Word.run(async (context) => {
             const selection = context.document.getSelection();
             
-            // より詳細な情報を取得
-            selection.load('text, start, end, isEmpty');
+            // 基本的な情報を取得
+            selection.load('text, isEmpty');
             await context.sync();
             
             console.log('📝 Selection info:', {
                 text: selection.text,
-                start: selection.start,
-                end: selection.end,
                 isEmpty: selection.isEmpty,
-                textLength: selection.text ? selection.text.length : 0,
-                startType: typeof selection.start,
-                endType: typeof selection.end
+                textLength: selection.text ? selection.text.length : 0
             });
             
-            // 位置情報を取得（複数の方法を試行）
-            let startPos = null;
-            let endPos = null;
+            // 位置情報の取得を簡素化
+            let positionInfo = null;
             
             try {
-                // 方法1: 直接取得
-                if (selection.start !== undefined && selection.start !== null) {
-                    startPos = selection.start.toString();
-                }
-                if (selection.end !== undefined && selection.end !== null) {
-                    endPos = selection.end.toString();
-                }
+                // 現在の選択範囲を取得
+                const range = selection.getRange();
+                range.load('start, end');
+                await context.sync();
                 
-                // 方法2: 範囲オブジェクトから取得
-                if (!startPos || !endPos) {
-                    const range = selection.getRange();
-                    range.load('start, end');
-                    await context.sync();
-                    
-                    if (range.start !== undefined) {
-                        startPos = range.start.toString();
-                    }
-                    if (range.end !== undefined) {
-                        endPos = range.end.toString();
-                    }
-                }
-                
-                console.log('📍 Position extraction result:', {
-                    startPos,
-                    endPos,
-                    startValid: startPos !== null && startPos !== 'undefined',
-                    endValid: endPos !== null && endPos !== 'undefined'
+                console.log('📍 Range info:', {
+                    start: range.start,
+                    end: range.end,
+                    startType: typeof range.start,
+                    endType: typeof range.end
                 });
+                
+                if (range.start !== undefined && range.end !== undefined) {
+                    positionInfo = {
+                        start: range.start,
+                        end: range.end
+                    };
+                }
                 
             } catch (posError) {
                 console.warn('⚠️ Position extraction failed:', posError);
             }
             
-            if (selection.text && selection.text.trim() !== '' && startPos && endPos) {
+            if (selection.text && selection.text.trim() !== '' && positionInfo) {
                 // テキストが選択されている場合は選択範囲を保存
                 savedCursorPosition = {
                     type: 'selection',
                     text: selection.text,
-                    start: startPos,
-                    end: endPos,
+                    start: positionInfo.start,
+                    end: positionInfo.end,
                     timestamp: new Date().toISOString()
                 };
                 console.log('✅ Selection range saved:', savedCursorPosition);
-            } else if (startPos) {
+            } else if (positionInfo) {
                 // カーソル位置のみの場合は位置を保存
                 savedCursorPosition = {
                     type: 'cursor',
-                    position: startPos,
+                    position: positionInfo.start,
                     timestamp: new Date().toISOString()
                 };
                 console.log('✅ Cursor position saved:', savedCursorPosition);
@@ -555,20 +540,15 @@ async function restoreCursorPosition() {
                     text: savedCursorPosition.text
                 });
                 
-                if (savedCursorPosition.start && savedCursorPosition.end) {
-                    // 文字列から数値に変換して選択
-                    const startPos = parseInt(savedCursorPosition.start);
-                    const endPos = parseInt(savedCursorPosition.end);
-                    selection.select(startPos, endPos);
+                if (savedCursorPosition.start !== undefined && savedCursorPosition.end !== undefined) {
+                    selection.select(savedCursorPosition.start, savedCursorPosition.end);
                 }
             } else if (savedCursorPosition.type === 'cursor') {
                 // カーソル位置を復元
                 console.log('📍 Restoring cursor position:', savedCursorPosition.position);
                 
-                if (savedCursorPosition.position) {
-                    // 文字列から数値に変換して選択
-                    const pos = parseInt(savedCursorPosition.position);
-                    selection.select(pos, pos);
+                if (savedCursorPosition.position !== undefined) {
+                    selection.select(savedCursorPosition.position, savedCursorPosition.position);
                 }
             }
             
@@ -666,60 +646,69 @@ function saveFormat(key) {
     }
 }
 
-// 書式の適用（保存された書式から）
-function loadFormat(key) {
-    if (!savedFormats[key]) {
-        showMessage(texts[currentLanguage].formatNotFound, 'error');
-        return;
-    }
-    
-    Word.run(async (context) => {
-        try {
-            const selection = context.document.getSelection();
-            
-            // 選択範囲を確認
-            selection.load('text');
-            await context.sync();
-            
-            // テキストが選択されていない場合でも適用可能
-            const format = savedFormats[key];
-            const font = selection.font;
-            const paragraph = selection.paragraphs.getFirst();
-            
-            font.name = format.font.name;
-            font.size = format.font.size;
-            font.bold = format.font.bold;
-            font.italic = format.font.italic;
-            font.color = format.font.color;
-            font.underline = format.font.underline;
-            font.highlightColor = format.font.highlightColor;
-            
-            paragraph.alignment = format.paragraph.alignment;
-            paragraph.leftIndent = format.paragraph.leftIndent;
-            paragraph.rightIndent = format.paragraph.rightIndent;
-            paragraph.lineSpacing = format.paragraph.lineSpacing;
-            paragraph.spaceAfter = format.paragraph.spaceAfter;
-            paragraph.spaceBefore = format.paragraph.spaceBefore;
-            
-            await context.sync();
-            
-            const message = selection.text && selection.text.trim() !== ''
-                ? `${key}: ${texts[currentLanguage].formatApplied}`
-                : `${key}: ${texts[currentLanguage].formatApplied} (カーソル位置)`;
-            showMessage(message, 'success');
-            
-            // 書式適用後にカーソル位置を復元
-            await restoreCursorPosition();
-            
-        } catch (error) {
-            console.error('書式適用エラー:', error);
-            showMessage('書式の適用に失敗しました', 'error');
+        // 書式の適用（保存された書式から）
+        function loadFormat(key) {
+            if (!savedFormats[key]) {
+                showMessage(texts[currentLanguage].formatNotFound, 'error');
+                return;
+            }
+
+            Word.run(async (context) => {
+                try {
+                    const selection = context.document.getSelection();
+                    const format = savedFormats[key];
+
+                    // 選択範囲を確認
+                    selection.load('text');
+                    await context.sync();
+
+                    console.log('🎨 Applying format:', {
+                        key,
+                        selectedText: selection.text,
+                        hasSelection: selection.text && selection.text.trim() !== ''
+                    });
+
+                    // 書式を適用
+                    const font = selection.font;
+                    const paragraph = selection.paragraphs.getFirst();
+
+                    // フォント書式を適用
+                    if (format.font.name) font.name = format.font.name;
+                    if (format.font.size) font.size = format.font.size;
+                    if (format.font.bold !== undefined) font.bold = format.font.bold;
+                    if (format.font.italic !== undefined) font.italic = format.font.italic;
+                    if (format.font.color) font.color = format.font.color;
+                    if (format.font.underline !== undefined) font.underline = format.font.underline;
+                    if (format.font.highlightColor) font.highlightColor = format.font.highlightColor;
+
+                    // 段落書式を適用
+                    if (format.paragraph.alignment) paragraph.alignment = format.paragraph.alignment;
+                    if (format.paragraph.leftIndent !== undefined) paragraph.leftIndent = format.paragraph.leftIndent;
+                    if (format.paragraph.rightIndent !== undefined) paragraph.rightIndent = format.paragraph.rightIndent;
+                    if (format.paragraph.lineSpacing !== undefined) paragraph.lineSpacing = format.paragraph.lineSpacing;
+                    if (format.paragraph.spaceAfter !== undefined) paragraph.spaceAfter = format.paragraph.spaceAfter;
+                    if (format.paragraph.spaceBefore !== undefined) paragraph.spaceBefore = format.paragraph.spaceBefore;
+
+                    await context.sync();
+
+                    const message = selection.text && selection.text.trim() !== ''
+                        ? `${key}: ${texts[currentLanguage].formatApplied}`
+                        : `${key}: ${texts[currentLanguage].formatApplied} (次回入力用)`;
+                    showMessage(message, 'success');
+
+                    // 書式適用後にカーソル位置を復元
+                    await restoreCursorPosition();
+
+                } catch (error) {
+                    console.error('書式適用エラー:', error);
+                    console.error('Error details:', error.debugInfo);
+                    showMessage('書式の適用に失敗しました', 'error');
+                }
+            }).catch(error => {
+                console.error('Word.run エラー:', error);
+                showMessage('書式の適用に失敗しました', 'error');
+            });
         }
-    }).catch(error => {
-        console.error('Word.run エラー:', error);
-        showMessage('書式の適用に失敗しました', 'error');
-    });
-}
 
 // 選択変更時の処理
 function onSelectionChanged() {
@@ -1143,45 +1132,52 @@ function updateLineSpacingDisplay() {
     }
 }
 
-// 現在の書式を適用
-function applyCurrentFormat() {
-    if (!currentFormat) return;
-    
-    Word.run(async (context) => {
-        try {
-            const selection = context.document.getSelection();
-            const font = selection.font;
-            const paragraph = selection.paragraphs.getFirst();
-            
-            // 現在の書式を更新
-            currentFormat.font.size = currentFontSize;
-            currentFormat.paragraph.lineSpacing = currentLineSpacing;
-            
-            // 書式を適用
-            font.name = currentFormat.font.name;
-            font.size = currentFormat.font.size;
-            font.bold = currentFormat.font.bold;
-            font.italic = currentFormat.font.italic;
-            font.color = currentFormat.font.color;
-            font.underline = currentFormat.font.underline;
-            font.highlightColor = currentFormat.font.highlightColor;
-            
-            paragraph.alignment = currentFormat.paragraph.alignment;
-            paragraph.leftIndent = currentFormat.paragraph.leftIndent;
-            paragraph.rightIndent = currentFormat.paragraph.rightIndent;
-            paragraph.lineSpacing = currentFormat.paragraph.lineSpacing;
-            paragraph.spaceAfter = currentFormat.paragraph.spaceAfter;
-            paragraph.spaceBefore = currentFormat.paragraph.spaceBefore;
-            
-            await context.sync();
-            
-        } catch (error) {
-            console.error('書式適用エラー:', error);
+        // 現在の書式を適用
+        function applyCurrentFormat() {
+            if (!currentFormat) return;
+
+            Word.run(async (context) => {
+                try {
+                    const selection = context.document.getSelection();
+                    const font = selection.font;
+                    const paragraph = selection.paragraphs.getFirst();
+
+                    // 現在の書式を更新
+                    currentFormat.font.size = currentFontSize;
+                    currentFormat.paragraph.lineSpacing = currentLineSpacing;
+
+                    console.log('🎨 Applying current format:', {
+                        fontSize: currentFontSize,
+                        lineSpacing: currentLineSpacing
+                    });
+
+                    // 書式を適用（安全な方法）
+                    if (currentFormat.font.name) font.name = currentFormat.font.name;
+                    if (currentFormat.font.size) font.size = currentFormat.font.size;
+                    if (currentFormat.font.bold !== undefined) font.bold = currentFormat.font.bold;
+                    if (currentFormat.font.italic !== undefined) font.italic = currentFormat.font.italic;
+                    if (currentFormat.font.color) font.color = currentFormat.font.color;
+                    if (currentFormat.font.underline !== undefined) font.underline = currentFormat.font.underline;
+                    if (currentFormat.font.highlightColor) font.highlightColor = currentFormat.font.highlightColor;
+
+                    if (currentFormat.paragraph.alignment) paragraph.alignment = currentFormat.paragraph.alignment;
+                    if (currentFormat.paragraph.leftIndent !== undefined) paragraph.leftIndent = currentFormat.paragraph.leftIndent;
+                    if (currentFormat.paragraph.rightIndent !== undefined) paragraph.rightIndent = currentFormat.paragraph.rightIndent;
+                    if (currentFormat.paragraph.lineSpacing !== undefined) paragraph.lineSpacing = currentFormat.paragraph.lineSpacing;
+                    if (currentFormat.paragraph.spaceAfter !== undefined) paragraph.spaceAfter = currentFormat.paragraph.spaceAfter;
+                    if (currentFormat.paragraph.spaceBefore !== undefined) paragraph.spaceBefore = currentFormat.paragraph.spaceBefore;
+
+                    await context.sync();
+                    console.log('✅ Current format applied successfully');
+
+                } catch (error) {
+                    console.error('書式適用エラー:', error);
+                    console.error('Error details:', error.debugInfo);
+                }
+            }).catch(error => {
+                console.error('Word.run エラー:', error);
+            });
         }
-    }).catch(error => {
-        console.error('Word.run エラー:', error);
-    });
-}
 
 // ホイールイベント処理
 function handleFontWheel(event) {
