@@ -291,7 +291,6 @@ function setupEventListeners() {
                 selectArea('continuous');
                 setTimeout(() => {
                     continuousControl.focus();
-                    continuousControl.click();
                 }, 10);
             });
             
@@ -1190,30 +1189,40 @@ function updateContinuousDisplay() {
     const display = document.getElementById('continuous-display');
     if (display) {
         const t = texts[currentLanguage];
-        display.textContent = continuousMode ? t.continuousModeOn : t.continuousModeOff;
+        if (continuousMode && continuousFormat) {
+            // 保持している書式のキーを表示（最初の5文字）
+            const formatKey = continuousFormat.key || 'FORMAT';
+            display.textContent = formatKey.substring(0, 5);
+        } else {
+            display.textContent = t.continuousModeOff;
+        }
     }
 }
 
-// 連続適用用の書式を保存
+// 連続適用用の書式を設定（既存の保存された書式から取得）
 function saveContinuousFormat(key) {
-    if (!currentFormat) {
-        showMessage(texts[currentLanguage].noTextSelected, 'error');
+    if (!savedFormats[key]) {
+        showMessage(texts[currentLanguage].formatNotFound, 'error');
         return;
     }
 
     try {
         continuousFormat = {
-            ...currentFormat,
+            ...savedFormats[key],
+            key: key,
             timestamp: new Date().toISOString()
         };
 
         const t = texts[currentLanguage];
-        showMessage(t.continuousFormatSaved, 'success');
+        showMessage(`${key}: ${t.continuousFormatSaved}`, 'success');
         
-        console.log('💾 Continuous format saved:', continuousFormat);
+        // 表示を更新
+        updateContinuousDisplay();
+        
+        console.log('💾 Continuous format set from saved format:', continuousFormat);
     } catch (error) {
-        console.error('連続書式保存エラー:', error);
-        showMessage('連続書式の保存に失敗しました', 'error');
+        console.error('連続書式設定エラー:', error);
+        showMessage('連続書式の設定に失敗しました', 'error');
     }
 }
 
