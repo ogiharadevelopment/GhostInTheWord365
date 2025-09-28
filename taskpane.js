@@ -782,17 +782,10 @@ function saveFormat(key) {
                     console.log('📝 Paragraph format data:', format.paragraph);
                     if (format.paragraph.alignment) {
                         console.log('📝 Applying alignment:', format.paragraph.alignment);
-                        console.log('📝 Paragraph object before alignment:', {
-                            alignment: paragraph.alignment,
-                            text: selection.text
-                        });
+                        
+                        // 段落のalignmentプロパティを設定
                         paragraph.alignment = format.paragraph.alignment;
                         console.log('✅ Alignment applied:', format.paragraph.alignment);
-                        
-                        // 適用後の確認
-                        paragraph.load('alignment');
-                        await context.sync();
-                        console.log('📝 Paragraph alignment after apply:', paragraph.alignment);
                     } else {
                         console.log('⚠️ No alignment data in format');
                     }
@@ -1056,6 +1049,12 @@ function updateSavedFormatsList() {
     
     // イベントリスナーを追加（少し遅延させて確実に追加）
     setTimeout(() => {
+        // 既存のイベントリスナーを削除（重複防止）
+        const existingButtons = savedFormatsList.querySelectorAll('.format-remove');
+        existingButtons.forEach(button => {
+            button.replaceWith(button.cloneNode(true));
+        });
+        
         // 削除ボタンのイベントリスナーを追加
         const removeButtons = savedFormatsList.querySelectorAll('.format-remove');
         console.log('🗑️ Found remove buttons:', removeButtons.length);
@@ -1082,6 +1081,12 @@ function updateSavedFormatsList() {
                 e.preventDefault();
                 e.stopPropagation();
             });
+        });
+        
+        // 既存の書式項目のイベントリスナーを削除（重複防止）
+        const existingItems = savedFormatsList.querySelectorAll('.format-item');
+        existingItems.forEach(item => {
+            item.replaceWith(item.cloneNode(true));
         });
         
         // 書式項目のイベントリスナーを追加（クリックで適用）
