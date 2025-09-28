@@ -115,17 +115,25 @@ h2 {
     line-height: 1.5;
 }
 
-/* コントロール行 */
-#control-row {
+/* コントロールグリッド */
+#control-grid {
+    margin: 20px 0;
+}
+
+.control-row {
     display: flex;
     gap: 10px;
-    margin: 20px 0;
+    margin-bottom: 10px;
     align-items: center;
-    justify-content: flex-start;
+    justify-content: center;
+}
+
+.control-row:last-child {
+    margin-bottom: 0;
 }
 
 .control-area {
-    width: 60px;
+    width: 70px;
     height: 60px;
     border: 2px solid #8a8886;
     border-radius: 8px;
@@ -169,7 +177,7 @@ h2 {
 }
 
 .action-area {
-    width: 60px;
+    width: 70px;
     height: 60px;
     border: 2px solid #8a8886;
     border-radius: 8px;

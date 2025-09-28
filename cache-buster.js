@@ -2,7 +2,7 @@
 console.log('Cache buster loaded at:', new Date().toISOString());
 
 // バージョン情報
-        const VERSION = '1.0.7.0';
+        const VERSION = '1.0.8.0';
 console.log('Format Manager Add-in Version:', VERSION);
 
 // キャッシュクリアの実行
