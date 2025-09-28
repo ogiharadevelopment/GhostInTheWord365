@@ -77,6 +77,10 @@ const texts = {
         continuousModeEnabled: '連続モード有効',
         continuousModeDisabled: '連続モード無効',
         continuousFormatSaved: '連続適用用書式を保存しました',
+        continuousFormatSet: '連続適用用書式を設定しました',
+        formatSaveError: '書式の保存に失敗しました',
+        formatApplyError: '書式の適用に失敗しました',
+        continuousFormatSetError: '連続書式の設定に失敗しました',
         japanese: '日本語',
         english: 'English'
     },
@@ -107,6 +111,10 @@ const texts = {
         continuousModeEnabled: 'Continuous mode enabled',
         continuousModeDisabled: 'Continuous mode disabled',
         continuousFormatSaved: 'Continuous format saved',
+        continuousFormatSet: 'Continuous format set',
+        formatSaveError: 'Failed to save format',
+        formatApplyError: 'Failed to apply format',
+        continuousFormatSetError: 'Failed to set continuous format',
         japanese: '日本語',
         english: 'English'
     }
@@ -711,7 +719,7 @@ function saveFormat(key) {
         
     } catch (error) {
         console.error('書式保存エラー:', error);
-        showMessage('書式の保存に失敗しました', 'error');
+        showMessage(texts[currentLanguage].formatSaveError || '書式の保存に失敗しました', 'error');
     }
 }
 
@@ -862,11 +870,11 @@ function saveFormat(key) {
                 } catch (error) {
                     console.error('書式適用エラー:', error);
                     console.error('Error details:', error.debugInfo);
-                    showMessage('書式の適用に失敗しました', 'error');
+                    showMessage(texts[currentLanguage].formatApplyError || '書式の適用に失敗しました', 'error');
                 }
             }).catch(error => {
                 console.error('Word.run エラー:', error);
-                showMessage('書式の適用に失敗しました', 'error');
+                showMessage(texts[currentLanguage].formatApplyError || '書式の適用に失敗しました', 'error');
             });
         }
 
@@ -1067,11 +1075,16 @@ function displayCurrentFormat(format) {
         listInfo = ` | ${listTypeText}${levelText}`;
     }
     
+    const t = texts[currentLanguage];
+    const boldText = currentLanguage === 'ja' ? '太字' : 'Bold';
+    const italicText = currentLanguage === 'ja' ? '斜体' : 'Italic';
+    const colorText = currentLanguage === 'ja' ? '色' : 'Color';
+    
     const formatText = `
         <div class="format-info">
             <strong>${font.name}</strong> ${font.size}px<br>
-            ${font.bold ? '太字' : ''} ${font.italic ? '斜体' : ''}<br>
-            ${alignmentText} | 色: ${font.color}${listInfo}
+            ${font.bold ? boldText : ''} ${font.italic ? italicText : ''}<br>
+            ${alignmentText} | ${colorText}: ${font.color}${listInfo}
         </div>
     `;
     
@@ -1507,7 +1520,7 @@ function setContinuousFormat(key) {
 
         const t = texts[currentLanguage];
         const message = currentLanguage === 'ja' 
-            ? `${key}: 連続適用用書式を設定しました`
+            ? `${key}: ${texts[currentLanguage].continuousFormatSet || '連続適用用書式を設定しました'}`
             : `${key}: Continuous format set`;
         showMessage(message, 'success');
         
@@ -1517,7 +1530,7 @@ function setContinuousFormat(key) {
         console.log('💾 Continuous format set from saved format:', continuousFormat);
     } catch (error) {
         console.error('連続書式設定エラー:', error);
-        showMessage('連続書式の設定に失敗しました', 'error');
+        showMessage(texts[currentLanguage].continuousFormatSetError || '連続書式の設定に失敗しました', 'error');
     }
 }
 
