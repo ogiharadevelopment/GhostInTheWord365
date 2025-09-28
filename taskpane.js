@@ -30,6 +30,8 @@ const texts = {
         keyGuideText: '保存された書式にマウスオーバーしてキーを押すと書式を適用します',
         fontLabel: 'フォント',
         continuousLabel: '連続',
+        loadLabel: 'LOAD',
+        loadInstruction: 'キーを押して適用',
         formatSaved: '書式を保存しました',
         formatApplied: '書式を適用しました',
         formatNotFound: '保存された書式が見つかりません',
@@ -60,6 +62,8 @@ const texts = {
         keyGuideText: 'Mouse over a saved format and press a key to apply it',
         fontLabel: 'Font',
         continuousLabel: 'Continuous',
+        loadLabel: 'LOAD',
+        loadInstruction: 'Press key to apply',
         formatSaved: 'Format saved',
         formatApplied: 'Format applied',
         formatNotFound: 'Saved format not found',
@@ -1038,7 +1042,6 @@ function updateSavedFormatsList() {
             item.focus();
         });
     });
-    
 }
 
 // 書式の削除
@@ -1397,5 +1400,4 @@ window.manualInit = function() {
     console.log('Manual initialization triggered');
     window.appInitialized = false;
     initializeApp();
-};
 };
