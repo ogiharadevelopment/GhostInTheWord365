@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>書式管理アドイン</title>
+    
+    <!-- Office JavaScript API -->
+    <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+    
+    <!-- CSS -->
+    <link rel="stylesheet" type="text/css" href="taskpane.css" />
+</head>
+<body>
+    <div id="app">
+        <!-- ヘッダー -->
+        <div id="header">
+            <h1 id="app-title">書式管理</h1>
+            <div id="language-selector">
+                <button id="lang-ja" class="lang-btn active">日本語</button>
+                <button id="lang-en" class="lang-btn">English</button>
+            </div>
+        </div>
+        
+        <!-- メインコンテンツ -->
+        <div id="main-content">
+            <!-- 現在の書式表示 -->
+            <div id="current-format-section">
+                <h2 id="current-format-title">現在の書式</h2>
+                <div id="current-format-display">
+                    <p id="no-selection-text">テキストを選択してください</p>
+                </div>
+            </div>
+            
+            <!-- コントロールグリッド -->
+            <div id="control-grid">
+                <!-- 1行目 -->
+                <div class="control-row">
+                    <div id="font-control" class="control-area" tabindex="0">
+                        <div class="control-label" id="font-label">フォント</div>
+                        <div class="control-value" id="font-size-display">12px</div>
+                    </div>
+                    <div id="continuous-control" class="control-area" tabindex="0">
+                        <div class="control-label" id="continuous-label">連続</div>
+                        <div class="control-value" id="continuous-display">OFF</div>
+                    </div>
+                </div>
+                <!-- 2行目 -->
+                <div class="control-row">
+                    <div id="save-area" class="action-area" tabindex="0">
+                        <div class="area-label" id="save-label">SAVE</div>
+                        <div class="area-instruction" id="save-instruction">キーを押して保存</div>
+                    </div>
+                    <div id="load-area" class="action-area" tabindex="0">
+                        <div class="area-label" id="load-label">LOAD</div>
+                        <div class="area-instruction" id="load-instruction">キーを押して適用</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 保存された書式一覧 -->
+            <div id="saved-formats-section">
+                <div id="saved-formats-header">
+                    <h2 id="saved-formats-title">保存された書式</h2>
+                </div>
+                <div id="saved-formats-list">
+                    <p id="no-saved-formats-text">保存された書式はありません</p>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+    
+    <!-- JavaScript -->
+    <script type="text/javascript" src="cache-buster.js"></script>
+    <script type="text/javascript" src="taskpane.js"></script>
+</body>
+</html>
