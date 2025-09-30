@@ -75,15 +75,10 @@
         <bt:String id="GetStarted.Title" DefaultValue="Start GhostInTheWord" />
         <bt:String id="CommandsGroup.Label" DefaultValue="GhostInTheWord" />
         <bt:String id="TaskpaneButton.Label" DefaultValue="GhostInTheWord" />
-        <bt:String id="GetStarted.Title" Locale="ja-JP" DefaultValue="GhostInTheWordを開始する" />
-        <bt:String id="CommandsGroup.Label" Locale="ja-JP" DefaultValue="GhostInTheWord" />
-        <bt:String id="TaskpaneButton.Label" Locale="ja-JP" DefaultValue="GhostInTheWord" />
       </bt:ShortStrings>
       <bt:LongStrings>
         <bt:String id="GetStarted.Description" DefaultValue="Add-in for saving and applying Word document formats." />
         <bt:String id="TaskpaneButton.Tooltip" DefaultValue="Open Format Manager Panel" />
-        <bt:String id="GetStarted.Description" Locale="ja-JP" DefaultValue="Word文書の書式を保存・適用するアドインです。" />
-        <bt:String id="TaskpaneButton.Tooltip" Locale="ja-JP" DefaultValue="書式管理パネルを開きます" />
       </bt:LongStrings>
     </Resources>
   </VersionOverrides>
