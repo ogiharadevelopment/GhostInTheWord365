@@ -6,11 +6,11 @@
   <DefaultLocale>ja-JP</DefaultLocale>
   <DisplayName DefaultValue="GhostInTheWord" />
   <Description DefaultValue="GhostInTheWord - Word文書の書式を保存・適用するアドインです。" />
+  <IconUrl DefaultValue="https://raw.githubusercontent.com/ogiharadevelopment/GhostInTheWord365/main/assets/icons/GITW32.png"/>
+  <HighResolutionIconUrl DefaultValue="https://raw.githubusercontent.com/ogiharadevelopment/GhostInTheWord365/main/assets/icons/GITW80.png"/>
+  <SupportUrl DefaultValue="https://github.com/ogiharadevelopment/GhostInTheWord365"/>
   <Override Locale="en-US" Value="GhostInTheWord" />
   <Override Locale="en-US" Value="GhostInTheWord - Add-in for saving and applying Word document formats." />
-  <IconUrl DefaultValue="https://ogiharadevelopment.github.io/GhostInTheWord365/assets/icons/GITW32.png"/>
-  <HighResolutionIconUrl DefaultValue="https://ogiharadevelopment.github.io/GhostInTheWord365/assets/icons/GITW80.png"/>
-  <SupportUrl DefaultValue="https://ogiharadevelopment.github.io/GhostInTheWord365/"/>
   <AppDomains>
     <AppDomain>https://ogiharadevelopment.github.io</AppDomain>
   </AppDomains>
