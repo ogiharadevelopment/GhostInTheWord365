@@ -3,14 +3,12 @@
   <Id>12c72505-d575-44c4-b226-e0c0a37770aa</Id>
   <Version>1.3.0.0</Version>
   <ProviderName>Format Manager</ProviderName>
-  <DefaultLocale>ja-JP</DefaultLocale>
+  <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="GhostInTheWord" />
-  <Description DefaultValue="GhostInTheWord - Word文書の書式を保存・適用するアドインです。" />
-  <IconUrl DefaultValue="https://raw.githubusercontent.com/ogiharadevelopment/GhostInTheWord365/main/assets/icons/GITW32.png"/>
-  <HighResolutionIconUrl DefaultValue="https://raw.githubusercontent.com/ogiharadevelopment/GhostInTheWord365/main/assets/icons/GITW80.png"/>
+  <Description DefaultValue="GhostInTheWord - Add-in for saving and applying Word document formats." />
+  <IconUrl DefaultValue="https://raw.githubusercontent.com/ogiharadevelopment/GhostInTheWord365/main/GITW32.png"/>
+  <HighResolutionIconUrl DefaultValue="https://raw.githubusercontent.com/ogiharadevelopment/GhostInTheWord365/main/GITW80.png"/>
   <SupportUrl DefaultValue="https://github.com/ogiharadevelopment/GhostInTheWord365"/>
-  <Override Locale="en-US" Value="GhostInTheWord" />
-  <Override Locale="en-US" Value="GhostInTheWord - Add-in for saving and applying Word document formats." />
   <AppDomains>
     <AppDomain>https://ogiharadevelopment.github.io</AppDomain>
   </AppDomains>
@@ -64,9 +62,9 @@
     </Hosts>
     <Resources>
       <bt:Images>
-        <bt:Image id="Icon.16x16" DefaultValue="https://ogiharadevelopment.github.io/GhostInTheWord365/assets/icons/GITW16.png"/>
-        <bt:Image id="Icon.32x32" DefaultValue="https://ogiharadevelopment.github.io/GhostInTheWord365/assets/icons/GITW32.png"/>
-        <bt:Image id="Icon.80x80" DefaultValue="https://ogiharadevelopment.github.io/GhostInTheWord365/assets/icons/GITW80.png"/>
+        <bt:Image id="Icon.16x16" DefaultValue="https://raw.githubusercontent.com/ogiharadevelopment/GhostInTheWord365/main/GITW16.png"/>
+        <bt:Image id="Icon.32x32" DefaultValue="https://raw.githubusercontent.com/ogiharadevelopment/GhostInTheWord365/main/GITW32.png"/>
+        <bt:Image id="Icon.80x80" DefaultValue="https://raw.githubusercontent.com/ogiharadevelopment/GhostInTheWord365/main/GITW80.png"/>
       </bt:Images>
       <bt:Urls>
         <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://go.microsoft.com/fwlink/?LinkId=276812" />
@@ -74,18 +72,18 @@
         <bt:Url id="Taskpane.Url" DefaultValue="https://ogiharadevelopment.github.io/GhostInTheWord365/taskpane.html" />
       </bt:Urls>
       <bt:ShortStrings>
-        <bt:String id="GetStarted.Title" DefaultValue="書式管理アドインを開始する" />
-        <bt:String id="CommandsGroup.Label" DefaultValue="書式管理" />
-        <bt:String id="TaskpaneButton.Label" DefaultValue="書式管理" />
-        <bt:String id="GetStarted.Title" Locale="en-US" DefaultValue="Start Format Manager Add-in" />
-        <bt:String id="CommandsGroup.Label" Locale="en-US" DefaultValue="Format Manager" />
-        <bt:String id="TaskpaneButton.Label" Locale="en-US" DefaultValue="Format Manager" />
+        <bt:String id="GetStarted.Title" DefaultValue="Start GhostInTheWord" />
+        <bt:String id="CommandsGroup.Label" DefaultValue="GhostInTheWord" />
+        <bt:String id="TaskpaneButton.Label" DefaultValue="GhostInTheWord" />
+        <bt:String id="GetStarted.Title" Locale="ja-JP" DefaultValue="GhostInTheWordを開始する" />
+        <bt:String id="CommandsGroup.Label" Locale="ja-JP" DefaultValue="GhostInTheWord" />
+        <bt:String id="TaskpaneButton.Label" Locale="ja-JP" DefaultValue="GhostInTheWord" />
       </bt:ShortStrings>
       <bt:LongStrings>
-        <bt:String id="GetStarted.Description" DefaultValue="Word文書の書式を保存・適用するアドインです。" />
-        <bt:String id="TaskpaneButton.Tooltip" DefaultValue="書式管理パネルを開きます" />
-        <bt:String id="GetStarted.Description" Locale="en-US" DefaultValue="Add-in for saving and applying Word document formats." />
-        <bt:String id="TaskpaneButton.Tooltip" Locale="en-US" DefaultValue="Open Format Manager Panel" />
+        <bt:String id="GetStarted.Description" DefaultValue="Add-in for saving and applying Word document formats." />
+        <bt:String id="TaskpaneButton.Tooltip" DefaultValue="Open Format Manager Panel" />
+        <bt:String id="GetStarted.Description" Locale="ja-JP" DefaultValue="Word文書の書式を保存・適用するアドインです。" />
+        <bt:String id="TaskpaneButton.Tooltip" Locale="ja-JP" DefaultValue="書式管理パネルを開きます" />
       </bt:LongStrings>
     </Resources>
   </VersionOverrides>
