@@ -77,6 +77,9 @@ function setLanguage(lang) {
     displayCurrentFormat(currentFormat);
     updateSavedFormatsList();
     
+    // 課金UIも更新
+    updatePaymentUI();
+    
     console.log('Language switched to:', lang);
 }
 let currentFontSize = 12;
@@ -620,6 +623,16 @@ function updateUI() {
         'lang-en': t.english
     };
     
+    // 課金関連のテキストも更新
+    const paymentElements = {
+        'premium-text': t.premiumVersion,
+        'free-text': t.freeVersion,
+        'manual-confirm-button': t.manualConfirmButton
+    };
+    
+    // 課金要素を追加
+    Object.assign(elements, paymentElements);
+    
     for (const [id, text] of Object.entries(elements)) {
         const element = document.getElementById(id);
         if (element) {
@@ -628,6 +641,9 @@ function updateUI() {
             console.warn(`Element with id '${id}' not found`);
         }
     }
+    
+    // プラン選択UIも更新
+    updatePaymentPlansUI();
 }
 
         // カーソル位置を保存（簡素化版）
@@ -1894,6 +1910,22 @@ window.resetPaymentStatus = function() {
     console.log('💳 Payment status reset to free');
 };
 
+// デバッグ用: 言語切り替えテスト
+window.testLanguageSwitch = function() {
+    console.log('🌐 Testing language switch...');
+    console.log('Current language:', currentLanguage);
+    
+    const newLang = currentLanguage === 'ja' ? 'en' : 'ja';
+    console.log('Switching to:', newLang);
+    
+    setLanguage(newLang);
+    
+    // 課金UIの状態を確認
+    setTimeout(() => {
+        checkPaymentUI();
+    }, 100);
+};
+
 // デバッグ用: 課金UI状態の確認
 window.checkPaymentUI = function() {
     console.log('💳 Payment UI Status Check:');
@@ -1902,13 +1934,13 @@ window.checkPaymentUI = function() {
     console.log('- paymentExpiry:', paymentExpiry);
     
     const paymentPlans = document.getElementById('payment-plans');
-    const upgradeButton = document.getElementById('upgrade-button');
     const manualConfirmButton = document.getElementById('manual-confirm-button');
+    const paymentStatusText = document.getElementById('payment-status-text');
     
     console.log('- paymentPlans element:', paymentPlans);
     console.log('- paymentPlans display:', paymentPlans ? paymentPlans.style.display : 'not found');
-    console.log('- upgradeButton display:', upgradeButton ? upgradeButton.style.display : 'not found');
     console.log('- manualConfirmButton display:', manualConfirmButton ? manualConfirmButton.style.display : 'not found');
+    console.log('- paymentStatusText:', paymentStatusText ? paymentStatusText.textContent : 'not found');
     
     // 強制的にプラン選択を表示
     if (paymentPlans) {
@@ -1998,57 +2030,34 @@ function updatePaymentUI() {
         }
     }
     
-    // 課金状態の表示更新
+    // 課金状態の表示更新（有効期限込み）
     const paymentStatusText = document.getElementById('payment-status-text');
     if (paymentStatusText) {
-        if (isPremiumUser) {
-            paymentStatusText.textContent = `${t.paymentStatus}: ${t.paymentPaid}`;
-        } else {
-            paymentStatusText.textContent = `${t.paymentStatus}: ${t.paymentNotPaid}`;
-        }
-    }
-    
-    // 有効期限の表示更新
-    const paymentExpiryElement = document.getElementById('payment-expiry');
-    const paymentExpiryText = document.getElementById('payment-expiry-text');
-    
-    if (paymentExpiryElement && paymentExpiryText) {
         if (isPremiumUser && paymentExpiry) {
             const expiryDate = paymentExpiry.toLocaleDateString();
-            paymentExpiryText.textContent = `${t.paymentExpiry}: ${expiryDate}`;
-            paymentExpiryElement.style.display = 'block';
             
             // 期限切れチェック
             if (paymentExpiry < new Date()) {
-                paymentExpiryText.textContent = `${t.paymentExpiry}: ${t.paymentExpired}`;
-                paymentExpiryText.style.color = '#d83b01';
+                paymentStatusText.textContent = `${t.paymentStatus}: ${t.paymentExpired} (${expiryDate})`;
+                paymentStatusText.style.color = '#d83b01';
                 
                 // 期限切れの場合は無料版に戻す
                 isPremiumUser = false;
                 maxFormats = PREMIUM_CONFIG.FREE_MAX_FORMATS;
                 updatePremiumStatus(false);
+            } else {
+                paymentStatusText.textContent = `${t.paymentStatus}: ${t.paymentPaid} (${t.paymentExpiry}: ${expiryDate})`;
+                paymentStatusText.style.color = '#107c10';
             }
         } else {
-            paymentExpiryElement.style.display = 'none';
+            paymentStatusText.textContent = `${t.paymentStatus}: ${t.paymentNotPaid}`;
+            paymentStatusText.style.color = '#605e5c';
         }
     }
     
     // ボタンの表示更新
-    const upgradeButton = document.getElementById('upgrade-button');
-    const paymentTestButton = document.getElementById('payment-test-button');
     const manualConfirmButton = document.getElementById('manual-confirm-button');
     const paymentPlans = document.getElementById('payment-plans');
-    
-    if (upgradeButton) {
-        upgradeButton.textContent = t.upgradeButton;
-        upgradeButton.style.display = isPremiumUser ? 'none' : 'block';
-    }
-    
-    if (paymentTestButton) {
-        paymentTestButton.textContent = t.paymentTestButton;
-        // テスト環境では常に表示
-        paymentTestButton.style.display = 'block';
-    }
     
     if (manualConfirmButton) {
         manualConfirmButton.textContent = t.manualConfirmButton;
@@ -2069,19 +2078,7 @@ function updatePaymentUI() {
 function setupPaymentEventListeners() {
     console.log('💳 Setting up payment event listeners...');
     
-    // アップグレードボタン
-    const upgradeButton = document.getElementById('upgrade-button');
-    if (upgradeButton) {
-        upgradeButton.addEventListener('click', handleUpgradeClick);
-        console.log('✅ Upgrade button event listener added');
-    }
-    
-    // 課金テストボタン
-    const paymentTestButton = document.getElementById('payment-test-button');
-    if (paymentTestButton) {
-        paymentTestButton.addEventListener('click', handlePaymentTestClick);
-        console.log('✅ Payment test button event listener added');
-    }
+    // アップグレードボタンと課金テストボタンは削除済み
     
     // 手動確認ボタン
     const manualConfirmButton = document.getElementById('manual-confirm-button');
@@ -2105,24 +2102,7 @@ function setupPaymentEventListeners() {
     }
 }
 
-// アップグレードボタンのクリック処理
-function handleUpgradeClick() {
-    console.log('💳 Upgrade button clicked');
-    
-    // Stripe Payment Linkを開く
-    window.open(PREMIUM_CONFIG.STRIPE_PAYMENT_URL, '_blank');
-    
-    // 決済完了の監視を開始
-    startPaymentMonitoring();
-}
-
-// 課金テストボタンのクリック処理
-function handlePaymentTestClick() {
-    console.log('💳 Payment test button clicked');
-    
-    // テスト用の決済完了をシミュレート
-    simulatePaymentCompletion();
-}
+// アップグレードボタンと課金テストボタンは削除済み
 
 // 決済監視の開始
 function startPaymentMonitoring() {
@@ -2172,7 +2152,7 @@ function handlePaymentSuccess() {
     showMessage('プレミアム版が有効になりました！', 'success');
 }
 
-// テスト用の決済完了シミュレーション
+// テスト用の決済完了シミュレーション（デバッグ用のみ）
 function simulatePaymentCompletion() {
     console.log('💳 Simulating payment completion...');
     
