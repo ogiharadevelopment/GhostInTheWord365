@@ -392,3 +392,117 @@ h2 {
     background-color: #e6f7e6;
     box-shadow: 0 0 0 2px rgba(16, 124, 16, 0.2);
 }
+
+/* 課金セクション */
+#payment-section {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border: 1px solid #e1e5e9;
+    border-radius: 8px;
+}
+
+#premium-status {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 10px;
+}
+
+.premium-indicator, .free-indicator {
+    display: flex;
+    align-items: center;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.premium-indicator {
+    background-color: #ffd700;
+    color: #8b4513;
+    border: 2px solid #ffa500;
+}
+
+.free-indicator {
+    background-color: #e1e5e9;
+    color: #605e5c;
+    border: 2px solid #a19f9d;
+}
+
+.premium-indicator.hidden, .free-indicator.hidden {
+    display: none;
+}
+
+#payment-info {
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+#payment-status, #payment-expiry {
+    font-size: 11px;
+    color: #605e5c;
+    margin: 2px 0;
+}
+
+#payment-expiry {
+    color: #d83b01;
+    font-weight: bold;
+}
+
+#payment-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.upgrade-button, .payment-test-button {
+    padding: 10px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+.upgrade-button {
+    background: linear-gradient(135deg, #0078d4, #106ebe);
+    color: white;
+    box-shadow: 0 2px 4px rgba(0, 120, 212, 0.3);
+}
+
+.upgrade-button:hover {
+    background: linear-gradient(135deg, #106ebe, #005a9e);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 120, 212, 0.4);
+}
+
+.payment-test-button {
+    background-color: #f8f9fa;
+    color: #0078d4;
+    border: 1px solid #0078d4;
+}
+
+.payment-test-button:hover {
+    background-color: #deecf9;
+    color: #106ebe;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 300px) {
+    #payment-section {
+        padding: 10px;
+    }
+    
+    .upgrade-button, .payment-test-button {
+        padding: 8px 12px;
+        font-size: 11px;
+    }
+    
+    .premium-indicator, .free-indicator {
+        padding: 6px 12px;
+        font-size: 11px;
+    }
+}

@@ -8,12 +8,17 @@ let currentLanguage = 'ja'; // デフォルトは日本語
 // 課金機能の設定
 const PREMIUM_CONFIG = {
     FREE_MAX_FORMATS: 3,
-    PREMIUM_MAX_FORMATS: Infinity
+    PREMIUM_MAX_FORMATS: Infinity,
+    STRIPE_PAYMENT_URL: 'https://buy.stripe.com/test_4gM3cweZ0bMt0kPcurew800',
+    PAYMENT_STATUS_KEY: 'paymentStatus',
+    PAYMENT_EXPIRY_KEY: 'paymentExpiry',
+    PREMIUM_STATUS_KEY: 'premiumStatus'
 };
 
 // 課金状態の管理
 let isPremiumUser = false;
 let maxFormats = PREMIUM_CONFIG.FREE_MAX_FORMATS;
+let paymentExpiry = null;
 
 // 課金状態の初期化
 function initializePremiumStatus() {
@@ -141,6 +146,16 @@ const texts = {
         formatNotFound: '保存された書式が見つかりません',
         saveOverwriteConfirm: (key) => `書式 "${key}" を上書きしますか？`,
         noTextSelected: 'テキストが選択されていません',
+        // 課金関連
+        premiumVersion: 'プレミアム版',
+        freeVersion: '無料版',
+        paymentStatus: '課金状態',
+        paymentExpiry: '有効期限',
+        upgradeButton: '🚀 プレミアム版にアップグレード',
+        paymentTestButton: '🧪 課金テスト',
+        paymentNotPaid: '未課金',
+        paymentPaid: '課金済み',
+        paymentExpired: '期限切れ',
         widthToggle: '幅: 300px',
         widthToggleNarrow: '幅: 100px',
         deleteConfirm: (key) => `書式 "${key}" を削除しますか？`,
@@ -183,6 +198,16 @@ const texts = {
         formatNotFound: 'Saved format not found',
         saveOverwriteConfirm: (key) => `Overwrite format "${key}"?`,
         noTextSelected: 'No text selected',
+        // Payment related
+        premiumVersion: 'Premium Version',
+        freeVersion: 'Free Version',
+        paymentStatus: 'Payment Status',
+        paymentExpiry: 'Expiry Date',
+        upgradeButton: '🚀 Upgrade to Premium',
+        paymentTestButton: '🧪 Payment Test',
+        paymentNotPaid: 'Not Paid',
+        paymentPaid: 'Paid',
+        paymentExpired: 'Expired',
         widthToggle: 'Width: 300px',
         widthToggleNarrow: 'Width: 100px',
         deleteConfirm: (key) => `Delete format "${key}"?`,
@@ -327,11 +352,15 @@ function initializeApp() {
         // 疑似クリックイベントの設定
         setupSyntheticClick();
         
-        console.log('Step 10: Final UI update');
+        console.log('Step 10: Payment UI initialization');
+        // 課金UIの初期化
+        initializePaymentUI();
+        
+        console.log('Step 11: Final UI update');
         // 最終的なUI更新
         updateSavedFormatsList();
         
-        console.log('Step 11: Initialize display values');
+        console.log('Step 12: Initialize display values');
         // 初期表示値を設定
         updateFontSizeDisplay();
         updateContinuousDisplay();
@@ -790,17 +819,23 @@ function saveFormat(key) {
         return;
     }
     
+    console.log('💾 saveFormat called with key:', key);
+    console.log('💾 Current savedFormats:', savedFormats);
+    console.log('💾 Checking for existing format:', key, 'exists:', !!savedFormats[key]);
+    
     // 既存の書式があるかチェック
     const existingFormat = savedFormats[key];
     
     if (existingFormat) {
+        console.log('💾 Existing format found, calling confirmSaveOverwrite');
         // 既存の書式がある場合、確認メッセージを表示
         confirmSaveOverwrite(key);
         return;
     }
     
+    console.log('💾 No existing format, calling performSave directly');
     // 新規保存の場合、直接保存
-    performSave(key);
+    performSave(key, false); // false = 新規保存
 }
 
 // 上書き保存の確認
@@ -814,16 +849,20 @@ function confirmSaveOverwrite(key) {
     saveClickCount[key]++;
     
     console.log(`💾 Save click count for ${key}:`, saveClickCount[key]);
+    console.log(`💾 Current saveClickCount object:`, saveClickCount);
     
     // 既存のタイマーをクリア
     if (saveClickTimer[key]) {
         clearTimeout(saveClickTimer[key]);
+        console.log(`💾 Cleared existing timer for ${key}`);
     }
     
     if (saveClickCount[key] === 1) {
         // 1回目のクリック：確認メッセージを表示
+        console.log('💾 First click - showing confirmation message');
         const t = texts[currentLanguage];
         const confirmMessage = t.saveOverwriteConfirm ? t.saveOverwriteConfirm(key) : `書式 "${key}" を上書きしますか？`;
+        console.log('💾 Confirm message:', confirmMessage);
         showMessage(`${confirmMessage} (もう一度キーを押すと上書き)`, 'info');
         
         // 3秒後にカウントをリセット
@@ -836,12 +875,14 @@ function confirmSaveOverwrite(key) {
         // 2回目のクリック：上書き保存を実行
         console.log('💾 Second click detected - proceeding with overwrite');
         saveClickCount[key] = 0;
-        performSave(key);
+        performSave(key, true); // true = 上書き保存
+    } else {
+        console.log(`💾 Unexpected click count: ${saveClickCount[key]}`);
     }
 }
 
 // 実際の保存処理
-function performSave(key) {
+function performSave(key, isOverwrite = false) {
     try {
         console.log('💾 Performing save with key:', key);
         console.log('💾 Current format data:', currentFormat);
@@ -879,7 +920,9 @@ function performSave(key) {
         setTimeout(() => saveArea.classList.remove('saved'), 1000);
         
         const t = texts[currentLanguage];
-        const message = savedFormats[key] ? t.formatOverwritten : t.formatSaved;
+        // 上書きかどうかでメッセージを分ける
+        const message = isOverwrite ? t.formatOverwritten : t.formatSaved;
+        console.log(`💾 Save completed - isOverwrite: ${isOverwrite}, message: ${message}`);
         showMessage(`${key}: ${message}`, 'success');
         
     } catch (error) {
@@ -1854,3 +1897,236 @@ window.manualInit = function() {
     window.appInitialized = false;
     initializeApp();
 };
+
+// 課金UIの初期化
+function initializePaymentUI() {
+    console.log('💳 Initializing payment UI...');
+    
+    try {
+        // 課金状態の読み込み
+        loadPaymentStatus();
+        
+        // 課金UIの更新
+        updatePaymentUI();
+        
+        // イベントリスナーの設定
+        setupPaymentEventListeners();
+        
+        console.log('✅ Payment UI initialized successfully');
+    } catch (error) {
+        console.error('❌ Failed to initialize payment UI:', error);
+    }
+}
+
+// 課金状態の読み込み
+function loadPaymentStatus() {
+    console.log('💳 Loading payment status...');
+    
+    // ローカルストレージから課金状態を読み込み
+    const paymentStatus = localStorage.getItem(PREMIUM_CONFIG.PAYMENT_STATUS_KEY);
+    const paymentExpiryStr = localStorage.getItem(PREMIUM_CONFIG.PAYMENT_EXPIRY_KEY);
+    
+    if (paymentStatus === 'completed') {
+        isPremiumUser = true;
+        maxFormats = PREMIUM_CONFIG.PREMIUM_MAX_FORMATS;
+        
+        if (paymentExpiryStr) {
+            paymentExpiry = new Date(paymentExpiryStr);
+        } else {
+            // デフォルトで1年後に設定
+            paymentExpiry = new Date();
+            paymentExpiry.setFullYear(paymentExpiry.getFullYear() + 1);
+            localStorage.setItem(PREMIUM_CONFIG.PAYMENT_EXPIRY_KEY, paymentExpiry.toISOString());
+        }
+        
+        console.log('💳 Premium status loaded:', { isPremiumUser, paymentExpiry });
+    } else {
+        isPremiumUser = false;
+        maxFormats = PREMIUM_CONFIG.FREE_MAX_FORMATS;
+        paymentExpiry = null;
+        console.log('💳 Free status loaded');
+    }
+}
+
+// 課金UIの更新
+function updatePaymentUI() {
+    console.log('💳 Updating payment UI...');
+    
+    const t = texts[currentLanguage];
+    
+    // プレミアム/無料インジケーターの更新
+    const premiumIndicator = document.getElementById('premium-indicator');
+    const freeIndicator = document.getElementById('free-indicator');
+    
+    if (premiumIndicator && freeIndicator) {
+        if (isPremiumUser) {
+            premiumIndicator.classList.remove('hidden');
+            freeIndicator.classList.add('hidden');
+        } else {
+            premiumIndicator.classList.add('hidden');
+            freeIndicator.classList.remove('hidden');
+        }
+    }
+    
+    // 課金状態の表示更新
+    const paymentStatusText = document.getElementById('payment-status-text');
+    if (paymentStatusText) {
+        if (isPremiumUser) {
+            paymentStatusText.textContent = `${t.paymentStatus}: ${t.paymentPaid}`;
+        } else {
+            paymentStatusText.textContent = `${t.paymentStatus}: ${t.paymentNotPaid}`;
+        }
+    }
+    
+    // 有効期限の表示更新
+    const paymentExpiryElement = document.getElementById('payment-expiry');
+    const paymentExpiryText = document.getElementById('payment-expiry-text');
+    
+    if (paymentExpiryElement && paymentExpiryText) {
+        if (isPremiumUser && paymentExpiry) {
+            const expiryDate = paymentExpiry.toLocaleDateString();
+            paymentExpiryText.textContent = `${t.paymentExpiry}: ${expiryDate}`;
+            paymentExpiryElement.style.display = 'block';
+            
+            // 期限切れチェック
+            if (paymentExpiry < new Date()) {
+                paymentExpiryText.textContent = `${t.paymentExpiry}: ${t.paymentExpired}`;
+                paymentExpiryText.style.color = '#d83b01';
+                
+                // 期限切れの場合は無料版に戻す
+                isPremiumUser = false;
+                maxFormats = PREMIUM_CONFIG.FREE_MAX_FORMATS;
+                updatePremiumStatus(false);
+            }
+        } else {
+            paymentExpiryElement.style.display = 'none';
+        }
+    }
+    
+    // ボタンの表示更新
+    const upgradeButton = document.getElementById('upgrade-button');
+    const paymentTestButton = document.getElementById('payment-test-button');
+    
+    if (upgradeButton) {
+        upgradeButton.textContent = t.upgradeButton;
+        upgradeButton.style.display = isPremiumUser ? 'none' : 'block';
+    }
+    
+    if (paymentTestButton) {
+        paymentTestButton.textContent = t.paymentTestButton;
+        // テスト環境では常に表示
+        paymentTestButton.style.display = 'block';
+    }
+}
+
+// 課金イベントリスナーの設定
+function setupPaymentEventListeners() {
+    console.log('💳 Setting up payment event listeners...');
+    
+    // アップグレードボタン
+    const upgradeButton = document.getElementById('upgrade-button');
+    if (upgradeButton) {
+        upgradeButton.addEventListener('click', handleUpgradeClick);
+        console.log('✅ Upgrade button event listener added');
+    }
+    
+    // 課金テストボタン
+    const paymentTestButton = document.getElementById('payment-test-button');
+    if (paymentTestButton) {
+        paymentTestButton.addEventListener('click', handlePaymentTestClick);
+        console.log('✅ Payment test button event listener added');
+    }
+}
+
+// アップグレードボタンのクリック処理
+function handleUpgradeClick() {
+    console.log('💳 Upgrade button clicked');
+    
+    // Stripe Payment Linkを開く
+    window.open(PREMIUM_CONFIG.STRIPE_PAYMENT_URL, '_blank');
+    
+    // 決済完了の監視を開始
+    startPaymentMonitoring();
+}
+
+// 課金テストボタンのクリック処理
+function handlePaymentTestClick() {
+    console.log('💳 Payment test button clicked');
+    
+    // テスト用の決済完了をシミュレート
+    simulatePaymentCompletion();
+}
+
+// 決済監視の開始
+function startPaymentMonitoring() {
+    console.log('💳 Starting payment monitoring...');
+    
+    // 5秒ごとに決済状態をチェック
+    const checkInterval = setInterval(() => {
+        const paymentStatus = localStorage.getItem(PREMIUM_CONFIG.PAYMENT_STATUS_KEY);
+        
+        if (paymentStatus === 'completed') {
+            console.log('💳 Payment completed!');
+            clearInterval(checkInterval);
+            handlePaymentSuccess();
+        }
+    }, 5000);
+    
+    // 10分後にタイムアウト
+    setTimeout(() => {
+        clearInterval(checkInterval);
+        console.log('💳 Payment monitoring timeout');
+    }, 600000);
+}
+
+// 決済成功の処理
+function handlePaymentSuccess() {
+    console.log('💳 Payment success - enabling premium features');
+    
+    // プレミアム状態を有効化
+    isPremiumUser = true;
+    maxFormats = PREMIUM_CONFIG.PREMIUM_MAX_FORMATS;
+    
+    // 有効期限を設定（1年後）
+    paymentExpiry = new Date();
+    paymentExpiry.setFullYear(paymentExpiry.getFullYear() + 1);
+    
+    // ローカルストレージに保存
+    localStorage.setItem(PREMIUM_CONFIG.PAYMENT_STATUS_KEY, 'completed');
+    localStorage.setItem(PREMIUM_CONFIG.PAYMENT_EXPIRY_KEY, paymentExpiry.toISOString());
+    localStorage.setItem('formatManagerPremium', 'true');
+    
+    // UIを更新
+    updatePremiumStatus(true);
+    updatePaymentUI();
+    
+    // 成功メッセージを表示
+    const t = texts[currentLanguage];
+    showMessage('プレミアム版が有効になりました！', 'success');
+}
+
+// テスト用の決済完了シミュレーション
+function simulatePaymentCompletion() {
+    console.log('💳 Simulating payment completion...');
+    
+    // テスト用の決済完了を設定
+    localStorage.setItem(PREMIUM_CONFIG.PAYMENT_STATUS_KEY, 'completed');
+    localStorage.setItem('formatManagerPremium', 'true');
+    
+    // 有効期限を設定（1年後）
+    paymentExpiry = new Date();
+    paymentExpiry.setFullYear(paymentExpiry.getFullYear() + 1);
+    localStorage.setItem(PREMIUM_CONFIG.PAYMENT_EXPIRY_KEY, paymentExpiry.toISOString());
+    
+    // プレミアム状態を有効化
+    isPremiumUser = true;
+    maxFormats = PREMIUM_CONFIG.PREMIUM_MAX_FORMATS;
+    
+    // UIを更新
+    updatePremiumStatus(true);
+    updatePaymentUI();
+    
+    // 成功メッセージを表示
+    const t = texts[currentLanguage];
+    showMessage('課金テスト完了！プレミアム機能が有効になりました', 'success');
+}
