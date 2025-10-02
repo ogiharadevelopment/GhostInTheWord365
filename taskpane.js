@@ -136,8 +136,10 @@ const texts = {
         fontLabel: 'フォント',
         continuousLabel: '連続',
         formatSaved: '書式を保存しました',
+        formatOverwritten: '書式を上書きしました',
         formatApplied: '書式を適用しました',
         formatNotFound: '保存された書式が見つかりません',
+        saveOverwriteConfirm: (key) => `書式 "${key}" を上書きしますか？`,
         noTextSelected: 'テキストが選択されていません',
         widthToggle: '幅: 300px',
         widthToggleNarrow: '幅: 100px',
@@ -176,8 +178,10 @@ const texts = {
         fontLabel: 'Font',
         continuousLabel: 'Continuous',
         formatSaved: 'Format saved',
+        formatOverwritten: 'Format overwritten',
         formatApplied: 'Format applied',
         formatNotFound: 'Saved format not found',
+        saveOverwriteConfirm: (key) => `Overwrite format "${key}"?`,
         noTextSelected: 'No text selected',
         widthToggle: 'Width: 300px',
         widthToggleNarrow: 'Width: 100px',
@@ -775,6 +779,10 @@ function handleKeyPress(event) {
     }
 }
 
+// 書式保存の確認（ダブルクリック方式）
+let saveClickCount = {};
+let saveClickTimer = {};
+
 // 書式の保存
 function saveFormat(key) {
     if (!currentFormat) {
@@ -782,8 +790,60 @@ function saveFormat(key) {
         return;
     }
     
+    // 既存の書式があるかチェック
+    const existingFormat = savedFormats[key];
+    
+    if (existingFormat) {
+        // 既存の書式がある場合、確認メッセージを表示
+        confirmSaveOverwrite(key);
+        return;
+    }
+    
+    // 新規保存の場合、直接保存
+    performSave(key);
+}
+
+// 上書き保存の確認
+function confirmSaveOverwrite(key) {
+    console.log('💾 confirmSaveOverwrite called with key:', key);
+    
+    // クリック回数をカウント
+    if (!saveClickCount[key]) {
+        saveClickCount[key] = 0;
+    }
+    saveClickCount[key]++;
+    
+    console.log(`💾 Save click count for ${key}:`, saveClickCount[key]);
+    
+    // 既存のタイマーをクリア
+    if (saveClickTimer[key]) {
+        clearTimeout(saveClickTimer[key]);
+    }
+    
+    if (saveClickCount[key] === 1) {
+        // 1回目のクリック：確認メッセージを表示
+        const t = texts[currentLanguage];
+        const confirmMessage = t.saveOverwriteConfirm ? t.saveOverwriteConfirm(key) : `書式 "${key}" を上書きしますか？`;
+        showMessage(`${confirmMessage} (もう一度キーを押すと上書き)`, 'info');
+        
+        // 3秒後にカウントをリセット
+        saveClickTimer[key] = setTimeout(() => {
+            saveClickCount[key] = 0;
+            console.log(`💾 Save click count reset for ${key}`);
+        }, 3000);
+        
+    } else if (saveClickCount[key] === 2) {
+        // 2回目のクリック：上書き保存を実行
+        console.log('💾 Second click detected - proceeding with overwrite');
+        saveClickCount[key] = 0;
+        performSave(key);
+    }
+}
+
+// 実際の保存処理
+function performSave(key) {
     try {
-        console.log('💾 Saving format with key:', key);
+        console.log('💾 Performing save with key:', key);
         console.log('💾 Current format data:', currentFormat);
         console.log('💾 Current saved formats count:', Object.keys(savedFormats).length);
         console.log('💾 Max formats allowed:', maxFormats);
@@ -818,7 +878,9 @@ function saveFormat(key) {
         saveArea.classList.add('saved');
         setTimeout(() => saveArea.classList.remove('saved'), 1000);
         
-        showMessage(`${key}: ${texts[currentLanguage].formatSaved}`, 'success');
+        const t = texts[currentLanguage];
+        const message = savedFormats[key] ? t.formatOverwritten : t.formatSaved;
+        showMessage(`${key}: ${message}`, 'success');
         
     } catch (error) {
         console.error('書式保存エラー:', error);
