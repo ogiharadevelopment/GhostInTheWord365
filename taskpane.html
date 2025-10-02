@@ -89,12 +89,29 @@
                         <span id="payment-expiry-text">有効期限: -</span>
                     </div>
                 </div>
+                <div id="payment-plans" style="display: none;">
+                    <h3 id="payment-plans-title">課金プランを選択</h3>
+                    <div class="plan-options">
+                        <button id="monthly-plan" class="plan-button">
+                            <span class="plan-name">月額プラン</span>
+                            <span class="plan-price">¥300/月</span>
+                        </button>
+                        <button id="yearly-plan" class="plan-button recommended">
+                            <span class="plan-name">年額プラン</span>
+                            <span class="plan-price">¥3,000/年</span>
+                            <span class="plan-save">17%お得！</span>
+                        </button>
+                    </div>
+                </div>
                 <div id="payment-actions">
                     <button id="upgrade-button" class="upgrade-button">
                         🚀 プレミアム版にアップグレード
                     </button>
                     <button id="payment-test-button" class="payment-test-button" style="display: none;">
                         🧪 課金テスト
+                    </button>
+                    <button id="manual-confirm-button" class="manual-confirm-button" style="display: none;">
+                        ✅ 決済完了を確認
                     </button>
                 </div>
             </div>

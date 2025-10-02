@@ -9,10 +9,16 @@ let currentLanguage = 'ja'; // デフォルトは日本語
 const PREMIUM_CONFIG = {
     FREE_MAX_FORMATS: 3,
     PREMIUM_MAX_FORMATS: Infinity,
-    STRIPE_PAYMENT_URL: 'https://buy.stripe.com/test_4gM3cweZ0bMt0kPcurew800',
+    // 本番用決済URL
+    STRIPE_PAYMENT_URL_YEARLY: 'https://buy.stripe.com/dRmeVdf8785A6jX7OS6g801',
+    STRIPE_PAYMENT_URL_MONTHLY: 'https://buy.stripe.com/9B614nf875Xs7o18SW6g800',
+    // テスト用URL（開発時のみ）
+    STRIPE_PAYMENT_URL_TEST: 'https://buy.stripe.com/test_4gM3cweZ0bMt0kPcurew800',
     PAYMENT_STATUS_KEY: 'paymentStatus',
     PAYMENT_EXPIRY_KEY: 'paymentExpiry',
-    PREMIUM_STATUS_KEY: 'premiumStatus'
+    PREMIUM_STATUS_KEY: 'premiumStatus',
+    // 本番環境フラグ
+    IS_PRODUCTION: true
 };
 
 // 課金状態の管理
@@ -156,6 +162,13 @@ const texts = {
         paymentNotPaid: '未課金',
         paymentPaid: '課金済み',
         paymentExpired: '期限切れ',
+        paymentPlansTitle: '課金プランを選択',
+        monthlyPlan: '月額プラン',
+        yearlyPlan: '年額プラン',
+        monthlyPrice: '¥300/月',
+        yearlyPrice: '¥3,000/年',
+        planSave: '17%お得！',
+        manualConfirmButton: '✅ 決済完了を確認',
         widthToggle: '幅: 300px',
         widthToggleNarrow: '幅: 100px',
         deleteConfirm: (key) => `書式 "${key}" を削除しますか？`,
@@ -208,6 +221,13 @@ const texts = {
         paymentNotPaid: 'Not Paid',
         paymentPaid: 'Paid',
         paymentExpired: 'Expired',
+        paymentPlansTitle: 'Select Payment Plan',
+        monthlyPlan: 'Monthly Plan',
+        yearlyPlan: 'Yearly Plan',
+        monthlyPrice: '¥300/month',
+        yearlyPrice: '¥3,000/year',
+        planSave: '17% Save!',
+        manualConfirmButton: '✅ Confirm Payment',
         widthToggle: 'Width: 300px',
         widthToggleNarrow: 'Width: 100px',
         deleteConfirm: (key) => `Delete format "${key}"?`,
@@ -2006,6 +2026,8 @@ function updatePaymentUI() {
     // ボタンの表示更新
     const upgradeButton = document.getElementById('upgrade-button');
     const paymentTestButton = document.getElementById('payment-test-button');
+    const manualConfirmButton = document.getElementById('manual-confirm-button');
+    const paymentPlans = document.getElementById('payment-plans');
     
     if (upgradeButton) {
         upgradeButton.textContent = t.upgradeButton;
@@ -2017,6 +2039,18 @@ function updatePaymentUI() {
         // テスト環境では常に表示
         paymentTestButton.style.display = 'block';
     }
+    
+    if (manualConfirmButton) {
+        manualConfirmButton.textContent = t.manualConfirmButton;
+        manualConfirmButton.style.display = isPremiumUser ? 'none' : 'block';
+    }
+    
+    if (paymentPlans) {
+        paymentPlans.style.display = isPremiumUser ? 'none' : 'block';
+    }
+    
+    // プラン選択UIの更新
+    updatePaymentPlansUI();
 }
 
 // 課金イベントリスナーの設定
@@ -2035,6 +2069,27 @@ function setupPaymentEventListeners() {
     if (paymentTestButton) {
         paymentTestButton.addEventListener('click', handlePaymentTestClick);
         console.log('✅ Payment test button event listener added');
+    }
+    
+    // 手動確認ボタン
+    const manualConfirmButton = document.getElementById('manual-confirm-button');
+    if (manualConfirmButton) {
+        manualConfirmButton.addEventListener('click', handleManualConfirmClick);
+        console.log('✅ Manual confirm button event listener added');
+    }
+    
+    // プラン選択ボタン
+    const monthlyPlanButton = document.getElementById('monthly-plan');
+    const yearlyPlanButton = document.getElementById('yearly-plan');
+    
+    if (monthlyPlanButton) {
+        monthlyPlanButton.addEventListener('click', () => handlePlanSelection('monthly'));
+        console.log('✅ Monthly plan button event listener added');
+    }
+    
+    if (yearlyPlanButton) {
+        yearlyPlanButton.addEventListener('click', () => handlePlanSelection('yearly'));
+        console.log('✅ Yearly plan button event listener added');
     }
 }
 
@@ -2129,4 +2184,106 @@ function simulatePaymentCompletion() {
     // 成功メッセージを表示
     const t = texts[currentLanguage];
     showMessage('課金テスト完了！プレミアム機能が有効になりました', 'success');
+}
+
+// プラン選択UIの更新
+function updatePaymentPlansUI() {
+    const t = texts[currentLanguage];
+    
+    // プラン選択タイトル
+    const plansTitle = document.getElementById('payment-plans-title');
+    if (plansTitle) {
+        plansTitle.textContent = t.paymentPlansTitle;
+    }
+    
+    // 月額プラン
+    const monthlyPlan = document.getElementById('monthly-plan');
+    if (monthlyPlan) {
+        const planName = monthlyPlan.querySelector('.plan-name');
+        const planPrice = monthlyPlan.querySelector('.plan-price');
+        if (planName) planName.textContent = t.monthlyPlan;
+        if (planPrice) planPrice.textContent = t.monthlyPrice;
+    }
+    
+    // 年額プラン
+    const yearlyPlan = document.getElementById('yearly-plan');
+    if (yearlyPlan) {
+        const planName = yearlyPlan.querySelector('.plan-name');
+        const planPrice = yearlyPlan.querySelector('.plan-price');
+        const planSave = yearlyPlan.querySelector('.plan-save');
+        if (planName) planName.textContent = t.yearlyPlan;
+        if (planPrice) planPrice.textContent = t.yearlyPrice;
+        if (planSave) planSave.textContent = t.planSave;
+    }
+}
+
+// プラン選択の処理
+function handlePlanSelection(planType) {
+    console.log('💳 Plan selected:', planType);
+    
+    // 選択されたプランを保存
+    localStorage.setItem('selectedPlan', planType);
+    
+    // 決済ページを開く
+    const paymentUrl = planType === 'monthly' 
+        ? PREMIUM_CONFIG.STRIPE_PAYMENT_URL_MONTHLY
+        : PREMIUM_CONFIG.STRIPE_PAYMENT_URL_YEARLY;
+    
+    window.open(paymentUrl, '_blank');
+    
+    // 手動確認ボタンを表示
+    const manualConfirmButton = document.getElementById('manual-confirm-button');
+    if (manualConfirmButton) {
+        manualConfirmButton.style.display = 'block';
+    }
+    
+    // 決済完了の確認を促す
+    const t = texts[currentLanguage];
+    showMessage('決済完了後、「決済完了を確認」ボタンを押してください', 'info');
+}
+
+// 手動確認ボタンのクリック処理
+function handleManualConfirmClick() {
+    console.log('💳 Manual confirm button clicked');
+    
+    const selectedPlan = localStorage.getItem('selectedPlan');
+    if (selectedPlan) {
+        // 決済完了をシミュレート
+        handlePaymentSuccess(selectedPlan);
+    } else {
+        const t = texts[currentLanguage];
+        showMessage('まず課金プランを選択してください', 'error');
+    }
+}
+
+// 決済成功の処理（プランタイプ対応）
+function handlePaymentSuccess(planType = 'yearly') {
+    console.log('💳 Payment success - enabling premium features for plan:', planType);
+    
+    // プレミアム状態を有効化
+    isPremiumUser = true;
+    maxFormats = PREMIUM_CONFIG.PREMIUM_MAX_FORMATS;
+    
+    // 有効期限を設定
+    paymentExpiry = new Date();
+    if (planType === 'monthly') {
+        paymentExpiry.setMonth(paymentExpiry.getMonth() + 1);
+    } else {
+        paymentExpiry.setFullYear(paymentExpiry.getFullYear() + 1);
+    }
+    
+    // ローカルストレージに保存
+    localStorage.setItem(PREMIUM_CONFIG.PAYMENT_STATUS_KEY, 'completed');
+    localStorage.setItem(PREMIUM_CONFIG.PAYMENT_EXPIRY_KEY, paymentExpiry.toISOString());
+    localStorage.setItem('formatManagerPremium', 'true');
+    localStorage.setItem('selectedPlan', planType);
+    
+    // UIを更新
+    updatePremiumStatus(true);
+    updatePaymentUI();
+    
+    // 成功メッセージを表示
+    const t = texts[currentLanguage];
+    const planText = planType === 'monthly' ? '月額プラン' : '年額プラン';
+    showMessage(`${planText}の決済が完了しました！プレミアム機能が有効になりました`, 'success');
 }

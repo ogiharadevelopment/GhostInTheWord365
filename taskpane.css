@@ -456,7 +456,7 @@ h2 {
     gap: 8px;
 }
 
-.upgrade-button, .payment-test-button {
+.upgrade-button, .payment-test-button, .manual-confirm-button {
     padding: 10px 16px;
     border: none;
     border-radius: 6px;
@@ -488,6 +488,77 @@ h2 {
 .payment-test-button:hover {
     background-color: #deecf9;
     color: #106ebe;
+}
+
+.manual-confirm-button {
+    background-color: #107c10;
+    color: white;
+}
+
+.manual-confirm-button:hover {
+    background-color: #0e6b0e;
+}
+
+/* 課金プラン選択 */
+#payment-plans {
+    margin-bottom: 15px;
+}
+
+#payment-plans-title {
+    font-size: 14px;
+    margin-bottom: 10px;
+    color: #323130;
+    text-align: center;
+}
+
+.plan-options {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.plan-button {
+    flex: 1;
+    padding: 12px 8px;
+    border: 2px solid #e1e5e9;
+    border-radius: 6px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+.plan-button:hover {
+    border-color: #0078d4;
+    background: #f8f9fa;
+}
+
+.plan-button.recommended {
+    border-color: #0078d4;
+    background: #deecf9;
+}
+
+.plan-name {
+    display: block;
+    font-size: 11px;
+    font-weight: bold;
+    margin-bottom: 4px;
+    color: #323130;
+}
+
+.plan-price {
+    display: block;
+    font-size: 14px;
+    color: #0078d4;
+    font-weight: bold;
+    margin-bottom: 2px;
+}
+
+.plan-save {
+    display: block;
+    font-size: 10px;
+    color: #107c10;
+    font-weight: bold;
 }
 
 /* レスポンシブ対応 */
