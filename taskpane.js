@@ -26,25 +26,7 @@ let isPremiumUser = false;
 let maxFormats = PREMIUM_CONFIG.FREE_MAX_FORMATS;
 let paymentExpiry = null;
 
-// 課金状態の初期化
-function initializePremiumStatus() {
-    // ローカルストレージから課金状態を読み込み
-    const savedPremiumStatus = localStorage.getItem('formatManagerPremium');
-    if (savedPremiumStatus === 'true') {
-        isPremiumUser = true;
-        maxFormats = PREMIUM_CONFIG.PREMIUM_MAX_FORMATS;
-    } else {
-        isPremiumUser = false;
-        maxFormats = PREMIUM_CONFIG.FREE_MAX_FORMATS;
-    }
-    
-    console.log('Premium status initialized:', {
-        isPremium: isPremiumUser,
-        maxFormats: maxFormats
-    });
-}
-
-// 課金状態の更新
+// 課金状態の更新（統一版）
 function updatePremiumStatus(isPremium) {
     isPremiumUser = isPremium;
     maxFormats = isPremium ? PREMIUM_CONFIG.PREMIUM_MAX_FORMATS : PREMIUM_CONFIG.FREE_MAX_FORMATS;
@@ -58,28 +40,6 @@ function updatePremiumStatus(isPremium) {
     });
     
     // UIを更新
-    updatePremiumDisplay();
-}
-
-// 課金状態の表示更新
-function updatePremiumDisplay() {
-    const t = texts[currentLanguage];
-    const statusText = isPremiumUser ? t.premiumStatus : t.freeStatus;
-    
-    // ヘッダーに課金状態を表示
-    const header = document.getElementById('header');
-    if (header) {
-        let statusElement = document.getElementById('premium-status');
-        if (!statusElement) {
-            statusElement = document.createElement('div');
-            statusElement.id = 'premium-status';
-            statusElement.style.cssText = 'font-size: 10px; color: #605e5c; margin-left: 10px;';
-            header.appendChild(statusElement);
-        }
-        statusElement.textContent = statusText;
-    }
-    
-    // 保存された書式一覧に制限情報を表示
     updateSavedFormatsList();
 }
 
@@ -309,8 +269,8 @@ function initializeApp() {
     
     try {
         console.log('Step 1: Premium status initialization');
-        // 課金状態の初期化
-        initializePremiumStatus();
+        // 課金状態の初期化（統一版）
+        loadPaymentStatus();
         
         console.log('Step 2: Word API availability check');
         // Word APIの可用性チェック
@@ -1918,6 +1878,49 @@ window.manualInit = function() {
     initializeApp();
 };
 
+// デバッグ用: 課金状態のリセット
+window.resetPaymentStatus = function() {
+    console.log('💳 Resetting payment status...');
+    localStorage.removeItem(PREMIUM_CONFIG.PAYMENT_STATUS_KEY);
+    localStorage.removeItem(PREMIUM_CONFIG.PAYMENT_EXPIRY_KEY);
+    localStorage.removeItem('formatManagerPremium');
+    localStorage.removeItem('selectedPlan');
+    
+    isPremiumUser = false;
+    maxFormats = PREMIUM_CONFIG.FREE_MAX_FORMATS;
+    paymentExpiry = null;
+    
+    updatePaymentUI();
+    console.log('💳 Payment status reset to free');
+};
+
+// デバッグ用: 課金UI状態の確認
+window.checkPaymentUI = function() {
+    console.log('💳 Payment UI Status Check:');
+    console.log('- isPremiumUser:', isPremiumUser);
+    console.log('- maxFormats:', maxFormats);
+    console.log('- paymentExpiry:', paymentExpiry);
+    
+    const paymentPlans = document.getElementById('payment-plans');
+    const upgradeButton = document.getElementById('upgrade-button');
+    const manualConfirmButton = document.getElementById('manual-confirm-button');
+    
+    console.log('- paymentPlans element:', paymentPlans);
+    console.log('- paymentPlans display:', paymentPlans ? paymentPlans.style.display : 'not found');
+    console.log('- upgradeButton display:', upgradeButton ? upgradeButton.style.display : 'not found');
+    console.log('- manualConfirmButton display:', manualConfirmButton ? manualConfirmButton.style.display : 'not found');
+    
+    // 強制的にプラン選択を表示
+    if (paymentPlans) {
+        paymentPlans.style.display = 'block';
+        console.log('💳 Forced payment plans to display');
+    }
+    
+    // 課金UIを再更新
+    updatePaymentUI();
+    console.log('💳 Payment UI refreshed');
+};
+
 // 課金UIの初期化
 function initializePaymentUI() {
     console.log('💳 Initializing payment UI...');
@@ -1938,15 +1941,17 @@ function initializePaymentUI() {
     }
 }
 
-// 課金状態の読み込み
+// 課金状態の読み込み（統一版）
 function loadPaymentStatus() {
     console.log('💳 Loading payment status...');
     
     // ローカルストレージから課金状態を読み込み
     const paymentStatus = localStorage.getItem(PREMIUM_CONFIG.PAYMENT_STATUS_KEY);
     const paymentExpiryStr = localStorage.getItem(PREMIUM_CONFIG.PAYMENT_EXPIRY_KEY);
+    const legacyPremiumStatus = localStorage.getItem('formatManagerPremium');
     
-    if (paymentStatus === 'completed') {
+    // 新しい課金システムまたはレガシーシステムのどちらかで課金済みかチェック
+    if (paymentStatus === 'completed' || legacyPremiumStatus === 'true') {
         isPremiumUser = true;
         maxFormats = PREMIUM_CONFIG.PREMIUM_MAX_FORMATS;
         
@@ -1957,6 +1962,11 @@ function loadPaymentStatus() {
             paymentExpiry = new Date();
             paymentExpiry.setFullYear(paymentExpiry.getFullYear() + 1);
             localStorage.setItem(PREMIUM_CONFIG.PAYMENT_EXPIRY_KEY, paymentExpiry.toISOString());
+        }
+        
+        // レガシーシステムから新しいシステムに移行
+        if (legacyPremiumStatus === 'true' && paymentStatus !== 'completed') {
+            localStorage.setItem(PREMIUM_CONFIG.PAYMENT_STATUS_KEY, 'completed');
         }
         
         console.log('💳 Premium status loaded:', { isPremiumUser, paymentExpiry });
@@ -2046,7 +2056,9 @@ function updatePaymentUI() {
     }
     
     if (paymentPlans) {
-        paymentPlans.style.display = isPremiumUser ? 'none' : 'block';
+        const shouldShow = !isPremiumUser;
+        paymentPlans.style.display = shouldShow ? 'block' : 'none';
+        console.log('💳 Payment plans display:', { isPremiumUser, shouldShow, display: paymentPlans.style.display });
     }
     
     // プラン選択UIの更新
